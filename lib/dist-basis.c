@@ -76,15 +76,34 @@ interact_basis (const model_t *mdl,
 double cov_basis (const model_t *mdl, const unsigned int j,
                   const unsigned int k1, const unsigned int k2,
                   const vector_t *t1, const vector_t *t2) {
-  /* @cov: output covariance value. */
-  double cov = 0.0;
+  /* initialize the output covariance value. */
+  double cov = cov_decay(mdl, j, t1, t2);
 
-  /* sum together the modulation terms. */
-  for (unsigned int l = 0; l < mdl->K; l++)
-    cov += cov_freq(mdl, j, k1, k2, l, l, t1, t2);
+  /* include the modulation factors for each dimension. */
+  for (unsigned int d = 0; d < mdl->D; d++) {
+    /* compute the current dimension time difference. */
+    const double td = vector_get(t1, d) - vector_get(t2, d);
 
-  /* finalize and return the computed covariance. */
-  cov *= cov_decay(mdl, j, t1, t2);
+    /* compute the phase shift of the current dimension:
+     *
+     * this relies on a simplification of the covariance function
+     * based on the known hypercomplex phase relations.
+     *
+     *  in phase ==> cos(t1 - t2)
+     *  out of phase:
+     *   k1 imag ==>  sin(t1 - t2)
+     *   k2 imag ==> -sin(t1 - t2)
+     */
+    const unsigned int kd = 1 << d;
+    const unsigned int d1 = k1 & kd;
+    const unsigned int d2 = k2 & kd;
+    const int zd = (d1 == d2 ? 0 : d1 ? -1 : 1);
+
+    /* include the factor of the current dimension. */
+    cov *= nrm_cos(mdl, j, d, td, zd);
+  }
+
+  /* return the computed covariance. */
   return cov;
 }
 

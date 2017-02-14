@@ -8,6 +8,11 @@
 
 /* function declarations (dist-normal.c): */
 
+double nrm_cos (const model_t *mdl,
+                const unsigned int j,
+                const unsigned int d,
+                const double t, const int z);
+
 double nrm_entropy (const model_t *mdl,
                     const unsigned int j,
                     const unsigned int d);
