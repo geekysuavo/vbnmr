@@ -12,6 +12,13 @@
 
 /* * * * modulation tables: * * * */
 
+/* phase offset legend:
+ *  0:   cos
+ *  1:  -sin
+ *  2:  -cos
+ *  3:   sin
+ */
+
 /* V1: modulation table for D = 1. */
 const int V1[] = {
   /* k = 0 */
@@ -476,7 +483,6 @@ int model_eval (const model_t *mdl, rng_t *gen, dataset_t *dat) {
 
       /* store the evaluation. */
       vector_set(dat->y[k], i, y);
-
     }
   }
 
@@ -514,13 +520,14 @@ double model_eval_single (const model_t *mdl,
 
   /* loop over the model signals. */
   for (unsigned int j = 0; j < M; j++) {
-    /* initialize the nonlinear factors. */
-    double R = 1.0, V = 0.0;
-
     /* compute the decay factor. */
+    double R = 1.0;
     for (unsigned int d = 0; d < D; d++) {
+      /* extract the mean parameters. */
       const double rho = mdl->sig[j][d].alpha / mdl->sig[j][d].beta;
       const double td = vector_get(t, d);
+
+      /* include the current dimension term. */
       R *= exp(-rho * td);
     }
 
@@ -530,18 +537,19 @@ double model_eval_single (const model_t *mdl,
       const double ajl = vector_get(mdl->ahat, l * M + j);
 
       /* compute the modulation factor. */
+      double V = 1.0;
       for (unsigned int d = 0; d < D; d++) {
         /* extract the mean parameters. */
         const double omega = mdl->sig[j][d].mu;
         const double td = vector_get(t, d);
 
         /* include the current dimension term. */
-        V += ajl * cos(omega * td + M_PI_2 * VTAB(k,l,d));
+        V *= cos(omega * td + M_PI_2 * VTAB(k,l,d));
       }
-    }
 
-    /* sum the signal contribution into the output. */
-    y += R * V;
+      /* sum the signal contribution into the output. */
+      y += ajl * R * V;
+    }
   }
 
   /* return the computed result. */
