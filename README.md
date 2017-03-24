@@ -14,7 +14,7 @@ in preparation for submission as:
 > 2017.
 
 A more general implementation of VFR is maintained in the
-[VFL GitHub repository] (http://github.com/geekysuavo/vfl).
+[VFL GitHub repository](http://github.com/geekysuavo/vfl).
 
 ## Introduction
 
@@ -31,8 +31,8 @@ FIXME.
 ## Licensing
 
 The **vbnmr** library is released under the
-[MIT license] (https://opensource.org/licenses/MIT). See the
-[LICENSE.md] (LICENSE.md) file for the complete license terms.
+[MIT license](https://opensource.org/licenses/MIT). See the
+[LICENSE.md](LICENSE.md) file for the complete license terms.
 
 And as always, enjoy!
 
