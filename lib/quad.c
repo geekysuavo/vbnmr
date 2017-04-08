@@ -355,6 +355,7 @@ void quad_diff_cospair (const factor_t *f, const unsigned int d,
 /* --- */
 
 /* quad_mean(): evaluate the quadrature factor mean.
+ *  - see factor_mean_fn() for more information.
  */
 FACTOR_MEAN (quad) {
   /* initialize the mean computation. */
@@ -371,6 +372,7 @@ FACTOR_MEAN (quad) {
 }
 
 /* quad_var(): evaluate the quadrature factor variance.
+ *  - see factor_var_fn() for more information.
  */
 FACTOR_VAR (quad) {
   /* initialize the variance computation. */
@@ -388,7 +390,44 @@ FACTOR_VAR (quad) {
   return fvar;
 }
 
+/* quad_cov(): evaluate the quadrature factor covariance.
+ *  - see factor_cov_fn() for more information.
+ */
+FACTOR_COV (quad) {
+  /* initialize the covariance computation. */
+  double fcov = 1.0;
+
+  /* include the contributions along each dimension. */
+  for (unsigned int d = 0; d < f->D; d++) {
+    /* get the current dimension input value difference. */
+    const double xd = vector_get(x1, f->d + d) - vector_get(x2, f->d + d);
+
+    /* compute the phase shift of the current dimension:
+     *
+     * this relies on a simplification of the covariance function
+     * based on the known hypercomplex phase relationships of
+     * quadrature sinusoids.
+     *
+     * in phase ==> cos(x1 - x2)
+     * out of phase:
+     *  p1 imag ==>  sin(x1 - x2)
+     *  p2 imag ==> -sin(x1 - x2)
+     */
+    const unsigned int pd = 1 << d;
+    const unsigned int d1 = p1 & pd;
+    const unsigned int d2 = p2 & pd;
+    const int zd = (d1 == d2 ? 0 : d1 ? -1 : 1);
+
+    /* include the contribution from the current dimension. */
+    fcov *= quad_cos(f, d, xd, zd);
+  }
+
+  /* return the computed covariance. */
+  return fcov;
+}
+
 /* quad_diff_mean(): evaluate the quadrature factor mean gradient.
+ *  - see factor_diff_mean_fn() for more information.
  */
 FACTOR_DIFF_MEAN (quad) {
   /* initialize the gradient vector. */
@@ -425,6 +464,7 @@ FACTOR_DIFF_MEAN (quad) {
 }
 
 /* quad_diff_var(): evaluate the quadrature factor variance gradient.
+ *  - see factor_diff_var_fn() for more information.
  */
 FACTOR_DIFF_VAR (quad) {
   /* initialize the gradient vector. */
@@ -466,6 +506,7 @@ FACTOR_DIFF_VAR (quad) {
 }
 
 /* quad_div(): evaluate the quadrature factor divergence.
+ *  - see factor_div_fn() for more information.
  */
 FACTOR_DIV (quad) {
   /* initialize the divergence computation. */
@@ -491,6 +532,7 @@ FACTOR_DIV (quad) {
 }
 
 /* quad_init(): initialize the quadrature factor structure.
+ *  - see factor_init_fn() for more information.
  */
 FACTOR_INIT (quad) {
   /* initialize the phase table. */
@@ -502,6 +544,7 @@ FACTOR_INIT (quad) {
 }
 
 /* quad_resize(): handle resizes of the quadrature factor.
+ *  - see factor_resize_fn() for more information.
  */
 FACTOR_RESIZE (quad) {
   /* get the extended structure pointer. */
@@ -541,6 +584,7 @@ FACTOR_RESIZE (quad) {
 }
 
 /* quad_set(): store a parameter into a quadrature factor.
+ *  - see factor_set_fn() for more information.
  */
 FACTOR_SET (quad) {
   /* determine which parameter is being assigned. */
@@ -571,6 +615,7 @@ FACTOR_SET (quad) {
 }
 
 /* quad_free(): free extra information from quadrature factors.
+ *  - see factor_free_fn() for more information.
  */
 FACTOR_FREE (quad) {
   /* free the phase table. */
@@ -608,6 +653,7 @@ static factor_type_t quad_type = {
   NULL,                                          /* parnames  */
   quad_mean,                                     /* mean      */
   quad_var,                                      /* var       */
+  quad_cov,                                      /* cov       */
   quad_diff_mean,                                /* diff_mean */
   quad_diff_var,                                 /* diff_var  */
   NULL,                                          /* meanfield */
