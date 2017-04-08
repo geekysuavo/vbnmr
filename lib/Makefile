@@ -8,15 +8,13 @@ GREP=grep -RHni --color
 # compilation and linkage flags.
 CFLAGS=-fPIC -ggdb -O3 -std=gnu99 -I.. -Wall -Wextra
 LDFLAGS=-shared
-LIBS=-lm
+LIBS=-lvfl -lm
 
 # output library filename.
 LIB=libvbnmr.so
 
 # filenames of C sources.
-SRC=  rng.c psi.c vector.c matrix.c blas.c cholesky.c
-SRC+= dist-normal.c dist-gamma.c dist-basis.c
-SRC+= dataset.c model.c optim.c gp.c
+SRC=quad.c vfgp.c
 
 # filenames of compiled objects.
 OBJ=$(SRC:.c=.o)
