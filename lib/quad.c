@@ -381,9 +381,7 @@ FACTOR_VAR (quad) {
   /* include the contributions along each dimension. */
   for (unsigned int d = 0; d < f->D; d++) {
     const double xd = vector_get(x, f->d + d);
-    fvar *= quad_cospair(f, d, xd, xd,
-                               VTAB(p, i, d),
-                               VTAB(p, j, d));
+    fvar *= quad_cospair(f, d, xd, xd, VTAB(p, i, d), VTAB(p, j, d));
   }
 
   /* return the computed variance. */
@@ -475,8 +473,8 @@ FACTOR_DIFF_VAR (quad) {
     /* compute the expectation along the current dimension. */
     const double xd = vector_get(x, f->d + d);
     const double Vd = quad_cospair(f, d, xd, xd,
-                                         VTAB(p, i, d),
-                                         VTAB(p, j, d));
+                                   VTAB(p, i, d),
+                                   VTAB(p, j, d));
 
     /* include the expectation in all but the current dimension. */
     for (unsigned int d2 = 0; d2 < f->D; d2++) {
@@ -495,9 +493,9 @@ FACTOR_DIFF_VAR (quad) {
     /* compute the parameter partial derivatives. */
     double dmu, dtau;
     quad_diff_cospair(f, d, xd, xd,
-                            VTAB(p, i, d),
-                            VTAB(p, j, d),
-                            &dmu, &dtau);
+                      VTAB(p, i, d),
+                      VTAB(p, j, d),
+                      &dmu, &dtau);
 
     /* include the derivatives in the gradient vector. */
     vector_set(df, pmu, vector_get(df, pmu) * dmu);
@@ -551,30 +549,30 @@ FACTOR_RESIZE (quad) {
   quad_t *fx = (quad_t*) f;
 
   /* reallocate the phase table. */
-  fx->vtab = realloc(fx->vtab, vtab_bytes(f->D, f->K));
+  fx->vtab = realloc(fx->vtab, vtab_bytes(D, K));
   if (!fx->vtab)
     return 0;
 
   /* initialize the phase table. */
-  vtab_init(fx->vtab, f->D, f->K);
+  vtab_init(fx->vtab, D, K);
 
   /* reallocate the parameter name table. */
-  const unsigned int sz = f->P * (sizeof(char*) + 8);
+  const unsigned int sz = P * (sizeof(char*) + 8);
   f->parnames = realloc(f->parnames, sz);
   if (!f->parnames)
     return 0;
 
   /* create a pointer for initializing the parameter names. */
-  char *ptr = (char*) (f->parnames + f->P);
+  char *ptr = (char*) (f->parnames + P);
 
   /* initialize the parameter name addresses. */
-  for (unsigned int p = 0; p < f->P; p++) {
+  for (unsigned int p = 0; p < P; p++) {
     f->parnames[p] = (char*) ptr;
     ptr += 8;
   }
 
   /* initialize the parameter name values. */
-  for (unsigned int d = 0; d < f->D; d++) {
+  for (unsigned int d = 0; d < D; d++) {
     snprintf(f->parnames[2 * d + P_MU],  7, "mu%u", d);
     snprintf(f->parnames[2 * d + P_TAU], 7, "tau%u", d);
   }
@@ -604,8 +602,8 @@ FACTOR_SET (quad) {
 
       vector_set(f->par, i, tau);
 
-      matrix_set(f->inf, i, i, tau);
-      matrix_set(f->inf, i + 1, i + 1, 0.75 / (tau * tau));
+      matrix_set(f->inf, i - 1, i - 1, tau);
+      matrix_set(f->inf, i, i, 0.75 / (tau * tau));
 
       return 1;
   }

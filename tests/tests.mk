@@ -6,7 +6,7 @@ GREP=grep -RHni --color
 
 CFLAGS=-ggdb -O3 -std=gnu99 -I../.. -Wall -Wextra
 LDFLAGS=-L../../lib
-LIBS=-lvbnmr
+LIBS=-lvbnmr -lvfl
 
 ENV=env DYLD_LIBRARY_PATH=../../lib $(TESTFLAGS)
 
