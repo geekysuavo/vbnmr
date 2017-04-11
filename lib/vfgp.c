@@ -250,7 +250,7 @@ MODEL_GRADIENT (vfgp) {
  */
 MODEL_MEANFIELD (vfgp) {
   /* return the fixed-tau vfr mean-field coefficients. */
-  return model_type_tauvfr->meanfield(mdl, j, A, B);
+  return model_type_tauvfr->meanfield(mdl, i, j, b, B);
 }
 
 /* vfgp_set_mode(): set the prediction mode employed by a variational

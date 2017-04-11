@@ -38,6 +38,7 @@ int main (int argc, char **argv) {
     factor_t *fR = factor_alloc(factor_type_decay);
     factor_set(fR, 0, 100.0);
     factor_set(fR, 1, 100.0);
+    factor_set_fixed(fR, 1);
 
     /* create a quadrature factor. */
     factor_t *fV = factor_alloc(vbnmr_factor_quad);
@@ -60,7 +61,7 @@ int main (int argc, char **argv) {
   /* optimize. */
   optim_t *opt = optim_alloc(optim_type_fg);
   optim_set_model(opt, mdl);
-  optim_set_lipschitz_init(opt, 0.1);
+  optim_set_lipschitz_init(opt, 0.001);
   optim_execute(opt);
 
   /* allocate datasets for prediction. */

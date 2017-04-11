@@ -658,6 +658,7 @@ static factor_type_t quad_type = {
   quad_div,                                      /* div       */
   quad_init,                                     /* init      */
   quad_resize,                                   /* resize    */
+  NULL,                                          /* kernel    */
   quad_set,                                      /* set       */
   NULL,                                          /* copy      */
   quad_free                                      /* free      */
