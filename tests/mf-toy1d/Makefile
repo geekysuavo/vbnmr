@@ -3,10 +3,11 @@
 BIN=toy1d
 
 # SRC: source filenames.
-SRC=main.c
+SRC=toy1d.c
 
 # DAT: output data filenames.
-DAT=meas.dat mean.dat var.dat map.dat
+DAT=  vfr-mean.dat vfr-var.dat vfr.p0.dat vfr.p1.dat
+DAT+= gp-mean.dat gp-var.dat gp.p0.dat gp.p1.dat
 
 # TESTFLAGS: environment variables to set during testing.
 TESTFLAGS=RNG_SEED=7321
