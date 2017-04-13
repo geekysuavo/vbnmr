@@ -793,7 +793,6 @@ FACTOR_MEANFIELD (quad) {
     vector_set(&Ga, nq, gamma);
     vector_set(&Xi, nq, xi);
     vector_set(&Nu, nq, nu);
-    nq++;
 
     /* accumulate the reduced parameters into the fft vector. */
     I = 2 * ((unsigned int) gamma);
@@ -807,10 +806,9 @@ FACTOR_MEANFIELD (quad) {
     gamma = 2.0 * xd;
 
     /* store the reduced parameters in their raw vectors. */
-    vector_set(&Ga, nq, gamma);
-    vector_set(&Xi, nq, xi);
-    vector_set(&Nu, nq, nu);
-    nq++;
+    vector_set(&Ga, nq + 1, gamma);
+    vector_set(&Xi, nq + 1, xi);
+    vector_set(&Nu, nq + 1, nu);
 
     /* accumulate the reduced parameters into the fft vector. */
     I = 2 * ((unsigned int) gamma);
@@ -819,6 +817,9 @@ FACTOR_MEANFIELD (quad) {
     vector_set(&Qd, I,     yr);
     vector_set(&Qd, I + 1, yi);
   }
+
+  /* increment the coefficient count for all dimensions. */
+  nq += 2;
 
   /* return success. */
   return 1;
