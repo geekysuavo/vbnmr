@@ -10,6 +10,8 @@
 
 int quad_set_dims (factor_t *f, const unsigned int D);
 
+int quad_set_ftsize (factor_t *f, const unsigned int n);
+
 /* available factor types: */
 
 extern const factor_type_t *vbnmr_factor_quad;

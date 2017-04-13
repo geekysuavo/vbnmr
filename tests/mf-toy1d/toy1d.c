@@ -19,7 +19,7 @@ int main (int argc, char **argv) {
   if (!argc || !argv) return 1;
 
   /* read the dataset file. */
-  data_t *dat = data_alloc_from_file("../toy1d/toy1d.dat");
+  data_t *dat = data_alloc_from_file("toy1d.dat");
 
   /* set up a hybrid model. */
   model_t *mdl = model_alloc(vbnmr_model_vfgp);
@@ -32,14 +32,15 @@ int main (int argc, char **argv) {
   for (unsigned int j = 0; j < M; j++) {
     /* create a decay factor. */
     factor_t *fR = factor_alloc(factor_type_decay);
-    factor_set(fR, 0, 100.0);
-    factor_set(fR, 1, 100.0);
+    factor_set(fR, 0, 1.0);
+    factor_set(fR, 1, 1.0e4);
     factor_set_fixed(fR, 1);
 
     /* create a quadrature factor. */
     factor_t *fV = factor_alloc(vbnmr_factor_quad);
     factor_set(fV, 0, 0.0);
-    factor_set(fV, 1, 1.0e-5);
+    factor_set(fV, 1, 1000.0);
+    quad_set_ftsize(fV, 65536);
 
     /* create a product of the decay and quadrature factors. */
     factor_t *f = factor_alloc(factor_type_product);
@@ -55,10 +56,9 @@ int main (int argc, char **argv) {
   optim_set_model(opt, mdl);
   optim_set_max_iters(opt, 1);
   optim_execute(opt);
-/*FIXME*/return 0;
 
   /* allocate datasets for prediction. */
-  double grid_values[] = { 0.0, 2.0e-4, 0.5 };
+  double grid_values[] = { 0.0, 1.0, 5000.0 };
   matrix_view_t grid = matrix_view_array(grid_values, 1, 3);
   data_t *mean = data_alloc_from_grid(2, &grid);
   data_t *var = data_alloc_from_grid(2, &grid);

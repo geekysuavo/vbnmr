@@ -2,6 +2,9 @@
 /* include the quad header. */
 #include <vbnmr/quad.h>
 
+/* include the fftw header. */
+#include <fftw3.h>
+
 /* define the parameter indices. */
 #define P_MU   0
 #define P_TAU  1
@@ -22,6 +25,20 @@
  *  term/weight and dimension.
  */
 #define VTAB(k,l,d) ((quad_t*) (f))->vtab[k][l][d]
+
+/* universally accessed mean-field update variables:
+ *  @Dft: maximum dimension count of fft arrays.
+ *  @Nft: maximum number of complex fft coefficients.
+ *  @nq: utilized number of columns in the @q matrix.
+ *  @q: matrices holding (gamma,xi,nu,gamma,xi,nu,...).
+ *  @Q: matrices holding inverse fast fourier transforms.
+ *  @plan: plan for fast fourier transforms.
+ */
+static unsigned int Dft = 0;
+static unsigned int Nft = 0;
+static unsigned int nq = 0;
+static matrix_t *q, *Q;
+static fftw_plan plan;
 
 /* quad_t: structure for holding a quadrature factor.
  */
@@ -410,6 +427,57 @@ void quad_cosreduce (const vector_t *a, const vector_t *theta,
   *Theta = atan2(S, C);
 }
 
+/* quad_costune(): perform a local search of a one-dimensional
+ * log-probability function using newton-rhapson iteration,
+ * then estimate the location and curvature of the mode.
+ *
+ * arguments:
+ *  @Gamma: vector of time-shifts.
+ *  @Xi: vector of amplitudes.
+ *  @Nu: vector of phase shifts.
+ *  @omega0: initial location for local search.
+ *  @mu0: prior location parameter.
+ *  @tau0: prior precision parameter.
+ *  @mu: pointer to the output location estimate.
+ *  @tau: pointer to the output precision estimate.
+ */
+void quad_costune (const vector_t *Gamma, const vector_t *Xi,
+                   const vector_t *Nu, const double omega0,
+                   const double mu0, const double tau0,
+                   double *mu, double *tau) {
+  /* declare required variables:
+   *  @f1, @f2: first and second function derivatives.
+   *  @omega: current iteration location estimate.
+   */
+  double f1, f2, omega = omega0;
+
+  /* loop a few times. the routine converges quite rapidly. */
+  for (unsigned int it = 0; it < 3; it++) {
+    /* initialize the derivates using the prior values. */
+    f1 = tau0 * (omega - mu0);
+    f2 = tau0;
+
+    /* recompute the derivatives. */
+    for (unsigned int i = 0; i < nq; i++) {
+      /* get the current vector values. */
+      const double gamma = vector_get(Gamma, i);
+      const double xi    = vector_get(Xi, i);
+      const double nu    = vector_get(Nu, i);
+
+      /* add the current terms to the derivatives. */
+      f1 += xi         * gamma * sin(gamma * omega + nu);
+      f2 += xi * gamma * gamma * cos(gamma * omega + nu);
+    }
+
+    /* adjust the location estimate. */
+    omega -= f1 / f2;
+  }
+
+  /* return the final results. */
+  *mu = omega;
+  *tau = f2;
+}
+
 /* --- */
 
 /* quad_mean(): evaluate the quadrature factor mean.
@@ -570,15 +638,80 @@ FACTOR_MEANFIELD (quad) {
 
   /* check for initialization calls. */
   if (FACTOR_MEANFIELD_INIT) {
-    /* FIXME: handle quad mf init. */
+    /* zero the contents of the fft matrices. */
+    nq = 0;
+    matrix_set_zero(q);
+    matrix_set_zero(Q);
+
+    /* return success. */
     return 1;
   }
 
   /* check for finalization calls. */
   if (FACTOR_MEANFIELD_END) {
-    /* FIXME: handle quad mf end. */ return 0;
+    /* finalize each dimension. */
+    for (unsigned int d = 0; d < f->D; d++) {
+      /* get views into the relevant q-matrix rows. */
+      vector_view_t Ga = matrix_row(q, d);
+      vector_view_t Xi = matrix_row(q, f->D + d);
+      vector_view_t Nu = matrix_row(q, 2 * f->D + d);
+
+      /* get a view into the relevant Q-matrix row. */
+      vector_view_t Qd = matrix_row(Q, d);
+      const unsigned int n = Qd.len;
+      double *Qdat = Qd.data;
+
+      /* get the prior parameters. */
+      const double mu0 = vector_get(fp->par, 2 * d + P_MU);
+      const double tau0 = vector_get(fp->par, 2 * d + P_TAU);
+
+      /* execute the fft. */
+      fftw_execute_dft(plan, (fftw_complex*) Qdat, (fftw_complex*) Qdat);
+
+      /* shift the array to place zero-frequency in the center. */
+      const unsigned int nh = n / 2;
+      for (unsigned int i = 0; i < nh; i += 2) {
+        const double qi = Qdat[i];
+        Qdat[i] = Qdat[i + nh];
+        Qdat[i + nh] = qi;
+      }
+
+      /* initialize the search parameters. */
+      double omega_max = mu0;
+      double Qmax = -1.0e9;
+
+      /* perform an initial search for the maximum log-probability. */
+      for (unsigned int i = 0; i < n; i += 2) {
+        /* compute the frequency and log-probability of the point. */
+        const double omega = M_PI * ((double) i / (double) nh - 1.0);
+        Qdat[i] -= 0.5 * tau0 * pow(omega - mu0, 2.0);
+        Qdat[i + 1] = 0.0;
+
+        /* remember point with greatest log-probability */
+        if (Qdat[i] > Qmax) {
+          omega_max = omega;
+          Qmax = Qdat[i];
+        }
+      }
+
+      /* run a few rounds of newton-rhapson to find the best mode,
+       * then perform a laplace approximation to find the precision.
+       */
+      double mu, tau;
+      quad_costune(&Ga, &Xi, &Nu, omega_max, mu0, tau0, &mu, &tau);
+
+      /* set the new parameters. */
+      factor_set(f, 2 * d + P_MU, mu);
+      factor_set(f, 2 * d + P_TAU, tau);
+    }
+
+    /* return success. */
     return 1;
   }
+
+  /* declare variables for holding reduced coefficients. */
+  double gamma, xi, nu, yr, yi;
+  unsigned int I;
 
   /* gain access to the mean-field coefficients. */
   vector_t *a = fx->a;
@@ -592,6 +725,14 @@ FACTOR_MEANFIELD (quad) {
 
   /* update along each dimension. */
   for (unsigned int d = 0; d < f->D; d++) {
+    /* get views into the relevant q-matrix rows. */
+    vector_view_t Ga = matrix_row(q, d);
+    vector_view_t Xi = matrix_row(q, f->D + d);
+    vector_view_t Nu = matrix_row(q, 2 * f->D + d);
+
+    /* get a view into the relevant Q-matrix row. */
+    vector_view_t Qd = matrix_row(Q, d);
+
     /* get the current dimension input. */
     const double xd = vector_get(dat->x, d);
 
@@ -641,12 +782,42 @@ FACTOR_MEANFIELD (quad) {
       }
     }
 
-    /* FIXME: handle quad mf data. */
-    double xi, nu;
+    /* include the factor of one half from trigonometric identities. */
+    blas_dscal(0.5, &cv);
+
+    /* reduce the first-order vectors. */
     quad_cosreduce(a, x, &xi, &nu);
-    printf("%16.9le %16.9le %16.9le\n", xi, xd, nu);
+    gamma = xd;
+
+    /* store the reduced parameters into their raw vectors. */
+    vector_set(&Ga, nq, gamma);
+    vector_set(&Xi, nq, xi);
+    vector_set(&Nu, nq, nu);
+    nq++;
+
+    /* accumulate the reduced parameters into the fft vector. */
+    I = 2 * ((unsigned int) gamma);
+    yr = vector_get(&Qd, I)     + xi * cos(nu);
+    yi = vector_get(&Qd, I + 1) + xi * sin(nu);
+    vector_set(&Qd, I,     yr);
+    vector_set(&Qd, I + 1, yi);
+
+    /* reduce the second-order matrices. */
     quad_cosreduce(&cv, &zv, &xi, &nu);
-    printf("%16.9le %16.9le %16.9le\n", xi, 2.0 * xd, nu);
+    gamma = 2.0 * xd;
+
+    /* store the reduced parameters in their raw vectors. */
+    vector_set(&Ga, nq, gamma);
+    vector_set(&Xi, nq, xi);
+    vector_set(&Nu, nq, nu);
+    nq++;
+
+    /* accumulate the reduced parameters into the fft vector. */
+    I = 2 * ((unsigned int) gamma);
+    yr = vector_get(&Qd, I)     + xi * cos(nu);
+    yi = vector_get(&Qd, I + 1) + xi * sin(nu);
+    vector_set(&Qd, I,     yr);
+    vector_set(&Qd, I + 1, yi);
   }
 
   /* return success. */
@@ -765,6 +936,43 @@ FACTOR_RESIZE (quad) {
   return 1;
 }
 
+/* quad_kernel(): write the kernel code of a quadrature factor.
+ *  - see factor_kernel_fn() for more information.
+ */
+FACTOR_KERNEL (quad) {
+  /* define kernel code format strings. */
+  const char *fmtA = "cov = 1.0;\n";
+  const char *fmtB = "{\n\
+const float xd = x1[%u] - x2[%u];\n\
+const float mu = par[%u];\n\
+const float tau = par[%u];\n\
+const unsigned int d1 = p1 & %u;\n\
+const unsigned int d2 = p2 & %u;\n\
+const float zd = (d1 == d2 ? 0.0f : d1 ? -%lff : %lff);\n\
+cov *= exp(-0.5f * xd * xd / tau) * cos(mu * xd + zd);\n\
+}\n";
+
+  /* allocate the kernel code string. */
+  const unsigned int len = strlen(fmtA) + f->D * strlen(fmtB);
+  char *kstr = malloc(len + 8);
+  if (!kstr)
+    return NULL;
+
+  /* write the header. */
+  char *pos = kstr;
+  pos += sprintf(pos, fmtA);
+
+  /* write the dimension strings. */
+  for (unsigned int d = 0, p = p0; d < f->D; d++, p += 2)
+    pos += sprintf(pos, fmtB, f->d + d, f->d + d,
+                   p + P_MU, p + P_TAU,
+                   1 << d, 1 << d,
+                   M_PI_2, M_PI_2);
+
+  /* return the new string. */
+  return kstr;
+}
+
 /* quad_set(): store a parameter into a quadrature factor.
  *  - see factor_set_fn() for more information.
  */
@@ -824,6 +1032,66 @@ int quad_set_dims (factor_t *f, const unsigned int D) {
   return factor_resize(f, D, 1 << D, 2 * D);
 }
 
+/* quad_set_ftsize(): set the number of complex points used by
+ * the fast fourier transform during mean-field inference.
+ *
+ * arguments:
+ *  @f: factor structure pointer to modify.
+ *  @n: number of complex points.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int quad_set_ftsize (factor_t *f, const unsigned int n) {
+  /* determine the new matrix sizes. */
+  const unsigned int Dnew = (f && f->D > Dft ? f->D : Dft);
+  const unsigned int Nnew = (n > Nft ? n : Nft);
+
+  /* check if the sizes have not changed. */
+  if (Dnew == Dft && Nnew == Nft)
+    return 1;
+
+  /* reset the counts. */
+  Dft = Dnew;
+  Nft = Nnew;
+  nq = 0;
+
+  /* free the fft plan and matrices. */
+  fftw_destroy_plan(plan);
+  free(q);
+
+  /* determine the memory requirement of the mean-field variables. */
+  unsigned int bytes = matrix_bytes(3 * Dft, 2 * Nft)
+                     + matrix_bytes(Dft, 2 * Nft);
+
+  /* allocate a new set of fft matrices. */
+  char *ptr = malloc(bytes);
+  if (!ptr)
+    return 0;
+
+  /* initialize the first matrix. */
+  q = (matrix_t*) ptr;
+  matrix_init(q, 3 * Dft, 2 * Nft);
+  ptr += matrix_bytes(3 * Dft, 2 * Nft);
+
+  /* initialize the second matrix. */
+  Q = (matrix_t*) ptr;
+  matrix_init(Q, Dft, 2 * Nft);
+
+  /* generate a new fft plan. */
+  vector_view_t qv = matrix_row(q, 0);
+  plan = fftw_plan_dft_1d(n, (fftw_complex*) qv.data,
+                             (fftw_complex*) qv.data,
+                             FFTW_BACKWARD, FFTW_MEASURE);
+
+  /* failed to plan? */
+  if (!plan)
+    return 0;
+
+  /* return success. */
+  return 1;
+}
+
 /* quad_type: quadrature factor type structure.
  */
 static factor_type_t quad_type = {
@@ -842,7 +1110,7 @@ static factor_type_t quad_type = {
   quad_div,                                      /* div       */
   quad_init,                                     /* init      */
   quad_resize,                                   /* resize    */
-  NULL,                                          /* kernel    */
+  quad_kernel,                                   /* kernel    */
   quad_set,                                      /* set       */
   NULL,                                          /* copy      */
   quad_free                                      /* free      */
