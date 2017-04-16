@@ -480,6 +480,24 @@ void quad_costune (const vector_t *Gamma, const vector_t *Xi,
 
 /* --- */
 
+/* quad_eval(): evaluate the quadrature factor at its mode.
+ *  - see factor_mean_fn() for more information.
+ */
+FACTOR_EVAL (quad) {
+  /* initialize the mode computation. */
+  double fmode = 1.0;
+
+  /* include the contributions along each dimension. */
+  for (unsigned int d = 0, p0 = 0; d < f->D; d++, p0 += 2) {
+    const double xd = vector_get(x, f->d + d);
+    const double mu = vector_get(f->par, p0 + P_MU);
+    fmode *= cos(mu * xd + M_PI_2 * (double) VTAB(p, i, d));
+  }
+
+  /* return the computed mode. */
+  return fmode;
+}
+
 /* quad_mean(): evaluate the quadrature factor mean.
  *  - see factor_mean_fn() for more information.
  */
@@ -1102,6 +1120,7 @@ static factor_type_t quad_type = {
   2,                                             /* initial P */
   2,                                             /* initial K */
   NULL,                                          /* parnames  */
+  quad_eval,                                     /* eval      */
   quad_mean,                                     /* mean      */
   quad_var,                                      /* var       */
   quad_cov,                                      /* cov       */
