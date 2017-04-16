@@ -1,10 +1,7 @@
 
-/* include the core vbnmr header. */
+/* include the required headers. */
 #include <vbnmr/vbnmr.h>
-
-/* include vfl headers. */
 #include <vfl/util/rng.h>
-#include <vfl/optim.h>
 
 /* main(): application entry point.
  *

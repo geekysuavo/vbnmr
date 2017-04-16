@@ -19,6 +19,10 @@ all:
 # intermediate file cleanup target.
 clean:
 	@$(MAKE) -sC lib clean
+	@$(MAKE) -sC tests/mf-slice clean
+	@$(MAKE) -sC tests/mf-toy1d clean
+	@$(MAKE) -sC tests/slice clean
+	@$(MAKE) -sC tests/toy1d clean
 
 # full recompilation target.
 again: clean all

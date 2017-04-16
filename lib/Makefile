@@ -14,7 +14,7 @@ LIBS=-lfftw3 -lvfl -lm
 LIB=libvbnmr.so
 
 # filenames of C sources.
-SRC=quad.c vfgp.c
+SRC=vbnmr.c quad.c vfgp.c
 
 # filenames of compiled objects.
 OBJ=$(SRC:.c=.o)
