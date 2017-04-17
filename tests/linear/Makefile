@@ -3,10 +3,10 @@
 BIN=linear
 
 # SRC: source filenames.
-SRC=main.c
+SRC=linear.c
 
 # DAT: output data filenames.
-DAT=meas.dat mean.dat var.dat map.dat
+DAT=
 
 # TESTFLAGS: environment variables to set during testing.
 TESTFLAGS=RNG_SEED=7321
