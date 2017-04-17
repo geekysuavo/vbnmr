@@ -192,7 +192,7 @@ MODEL_INIT (vfgp) {
  */
 MODEL_BOUND (vfgp) {
   /* return the fixed-tau vfr bound. */
-  return model_type_tauvfr->bound(mdl);
+  return vfl_model_tauvfr->bound(mdl);
 }
 
 /* vfgp_predict(): return the prediction of a hybrid vfr/gp model.
@@ -214,7 +214,7 @@ MODEL_PREDICT (vfgp) {
   }
 
   /* fall back to the fixed-tau vfr prediction. */
-  return model_type_tauvfr->predict(mdl, x, p, mean, var);
+  return vfl_model_tauvfr->predict(mdl, x, p, mean, var);
 }
 
 /* vfgp_infer(): perform complete inference in a hybrid vfr/gp model.
@@ -222,7 +222,7 @@ MODEL_PREDICT (vfgp) {
  */
 MODEL_INFER (vfgp) {
   /* use fixed-tau vfr full inference. */
-  return model_type_tauvfr->infer(mdl);
+  return vfl_model_tauvfr->infer(mdl);
 }
 
 /* vfgp_update(): perform efficient low-rank inference in a
@@ -231,7 +231,7 @@ MODEL_INFER (vfgp) {
  */
 MODEL_UPDATE (vfgp) {
   /* use fixed-tau vfr partial inference. */
-  return model_type_tauvfr->update(mdl, j);
+  return vfl_model_tauvfr->update(mdl, j);
 }
 
 /* vfgp_gradient(): return the gradient of a single factor in a
@@ -240,7 +240,7 @@ MODEL_UPDATE (vfgp) {
  */
 MODEL_GRADIENT (vfgp) {
   /* return the fixed-tau vfr gradient. */
-  return model_type_tauvfr->gradient(mdl, i, j, grad);
+  return vfl_model_tauvfr->gradient(mdl, i, j, grad);
 }
 
 /* vfgp_meanfield(): return the coefficients required for an
@@ -250,7 +250,7 @@ MODEL_GRADIENT (vfgp) {
  */
 MODEL_MEANFIELD (vfgp) {
   /* return the fixed-tau vfr mean-field coefficients. */
-  return model_type_tauvfr->meanfield(mdl, i, j, b, B);
+  return vfl_model_tauvfr->meanfield(mdl, i, j, b, B);
 }
 
 /* vfgp_set_mode(): set the prediction mode employed by a variational

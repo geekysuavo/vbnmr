@@ -32,7 +32,7 @@ int main (int argc, char **argv) {
   const unsigned int M = 10;
   for (unsigned int j = 0; j < M; j++) {
     /* create a decay factor. */
-    factor_t *fR = factor_alloc(factor_type_decay);
+    factor_t *fR = factor_alloc(vfl_factor_decay);
     factor_set(fR, 0, 100.0);
     factor_set(fR, 1, 10.0);
     factor_set_fixed(fR, 1);
@@ -43,7 +43,7 @@ int main (int argc, char **argv) {
     factor_set(fV, 1, 1.0e-6);
 
     /* create a product of the decay and quadrature factors. */
-    factor_t *f = factor_alloc(factor_type_product);
+    factor_t *f = factor_alloc(vfl_factor_product);
     product_add_factor(f, 0, fR);
     product_add_factor(f, 0, fV);
 
@@ -56,7 +56,7 @@ int main (int argc, char **argv) {
     factor_set(mdl->factors[j], 2, 1000.0 * rng_normal(R));
 
   /* optimize. */
-  optim_t *opt = optim_alloc(optim_type_fg);
+  optim_t *opt = optim_alloc(vfl_optim_fg);
   optim_set_model(opt, mdl);
   optim_set_lipschitz_init(opt, 100.0);
   optim_execute(opt);

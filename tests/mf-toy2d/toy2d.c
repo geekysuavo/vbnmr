@@ -31,13 +31,13 @@ int main (int argc, char **argv) {
   const unsigned int M = 3;
   for (unsigned int j = 0; j < M; j++) {
     /* create a first-dimension decay factor. */
-    factor_t *fR0 = factor_alloc(factor_type_decay);
+    factor_t *fR0 = factor_alloc(vfl_factor_decay);
     factor_set(fR0, 0, 10.0);
     factor_set(fR0, 1, 290000.0);
     factor_set_fixed(fR0, 1);
 
     /* create a second-dimension decay factor. */
-    factor_t *fR1 = factor_alloc(factor_type_decay);
+    factor_t *fR1 = factor_alloc(vfl_factor_decay);
     factor_set(fR1, 0, 10.0);
     factor_set(fR1, 1, 15000.0);
     factor_set_fixed(fR1, 1);
@@ -52,7 +52,7 @@ int main (int argc, char **argv) {
     quad_set_ftsize(fV, 65536);
 
     /* create a product of the decays and quadrature factors. */
-    factor_t *f = factor_alloc(factor_type_product);
+    factor_t *f = factor_alloc(vfl_factor_product);
     product_add_factor(f, 0, fR0);
     product_add_factor(f, 0, fR1);
     product_add_factor(f, 0, fV);
@@ -62,7 +62,7 @@ int main (int argc, char **argv) {
   }
 
   /* optimize, using mean-field. */
-  optim_t *opt = optim_alloc(optim_type_mf);
+  optim_t *opt = optim_alloc(vfl_optim_mf);
   optim_set_model(opt, mdl);
   optim_set_max_iters(opt, 1);
   optim_execute(opt);

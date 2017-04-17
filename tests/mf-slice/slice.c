@@ -28,7 +28,7 @@ int main (int argc, char **argv) {
   const unsigned int M = 10;
   for (unsigned int j = 0; j < M; j++) {
     /* create a decay factor. */
-    factor_t *fR = factor_alloc(factor_type_decay);
+    factor_t *fR = factor_alloc(vfl_factor_decay);
     factor_set(fR, 0, 9.75);
     factor_set(fR, 1, 1.0e3);
     factor_set_fixed(fR, 1);
@@ -40,7 +40,7 @@ int main (int argc, char **argv) {
     quad_set_ftsize(fV, 65536);
 
     /* create a product of the decay and quadrature factors. */
-    factor_t *f = factor_alloc(factor_type_product);
+    factor_t *f = factor_alloc(vfl_factor_product);
     product_add_factor(f, 0, fR);
     product_add_factor(f, 0, fV);
 
@@ -49,7 +49,7 @@ int main (int argc, char **argv) {
   }
 
   /* optimize. */
-  optim_t *opt = optim_alloc(optim_type_mf);
+  optim_t *opt = optim_alloc(vfl_optim_mf);
   optim_set_model(opt, mdl);
   optim_set_max_iters(opt, 1);
   optim_execute(opt);
