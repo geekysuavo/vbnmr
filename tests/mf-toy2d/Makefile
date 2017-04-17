@@ -3,10 +3,10 @@
 BIN=toy2d
 
 # SRC: source filenames.
-SRC=main.c
+SRC=toy2d.c
 
 # DAT: output data filenames.
-DAT=meas.dat sim.dat mean.dat var.dat map.dat
+DAT=fit-mean.dat fit-var.dat mean.dat var.dat
 
 # TESTFLAGS: environment variables to set during testing.
 TESTFLAGS=RNG_SEED=775
