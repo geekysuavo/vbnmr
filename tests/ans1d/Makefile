@@ -1,12 +1,12 @@
 
 # BIN: test executable filename.
-BIN=slice
+BIN=ans1d
 
 # SRC: source filenames.
-SRC=main.c
+SRC=ans1d.c
 
 # DAT: output data filenames.
-DAT=mean.dat var.dat map.dat
+DAT=source.dat parms.dat meas*.dat vfr*.dat gp*.dat new*.dat
 
 # TESTFLAGS: environment variables to set during testing.
 TESTFLAGS=RNG_SEED=775
