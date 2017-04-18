@@ -26,7 +26,7 @@ int main (int argc, char **argv) {
    */
   const unsigned int M = 5;
   const double tau = 1.0;
-  const double tau_omega = 500.0;
+  const double tau_omega = 20.0;
 
   /* compute derived constants:
    *  @phi: global signal phase offset.
@@ -38,7 +38,7 @@ int main (int argc, char **argv) {
   const double phi = M_PI * (2.0 * rng_uniform(R) - 1.0);
 
   /* allocate a dataset holding a uniform grid. */
-  double grid_values[] = { 0.0, 10.0, 5000.0 };
+  double grid_values[] = { 0.0, 1.0, 1000.0 };
   matrix_view_t grid = matrix_view_array(grid_values, 1, 3);
   data_t *dat = data_alloc_from_grid(2, &grid);
 
@@ -55,8 +55,8 @@ int main (int argc, char **argv) {
   for (unsigned int j = 0; j < M; j++) {
     /* create a decay factor. */
     factor_t *fR = factor_alloc(vfl_factor_decay);
-    factor_set(fR, 0, 10.0);
-    factor_set(fR, 1, 5.0e4);
+    factor_set(fR, 0, 100.0);
+    factor_set(fR, 1, 1.0e5);
     factor_set_fixed(fR, 1);
 
     /* create a quadrature factor. */
