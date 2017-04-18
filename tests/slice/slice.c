@@ -24,7 +24,7 @@ int main (int argc, char **argv) {
 
   /* set up a hybrid model. */
   model_t *mdl = model_alloc(vbnmr_model_vfgp);
-  model_set_alpha0(mdl, 1.0e+4);
+  tauvfr_set_tau(mdl, 1.0e4);
   model_set_nu(mdl, 1.0e-8);
   model_set_data(mdl, dat);
 

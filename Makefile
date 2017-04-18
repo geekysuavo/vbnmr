@@ -19,6 +19,7 @@ all:
 # intermediate file cleanup target.
 clean:
 	@$(MAKE) -sC lib clean
+	@$(MAKE) -sC tests/ans1d clean
 	@$(MAKE) -sC tests/linear clean
 	@$(MAKE) -sC tests/mf-slice clean
 	@$(MAKE) -sC tests/mf-toy1d clean
