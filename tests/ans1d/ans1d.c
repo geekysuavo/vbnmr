@@ -134,15 +134,11 @@ int main (int argc, char **argv) {
 
   /* evaluate the model over the initial dataset. */
   for (unsigned int i = 0; i < dat->N; i++) {
-    /* find the matching source value. */
-    for (unsigned int isrc = 0; isrc < dsrc->N; isrc++) {
-      /* once found, copy the measurement and break the search. */
-      if (dsrc->data[isrc].p == dat->data[i].p &&
-          vector_equal(dsrc->data[isrc].x, dat->data[i].x)) {
-        dat->data[i].y = dsrc->data[isrc].y;
-        break;
-      }
-    }
+    /* search for the matching source value. */
+    datum_t *di = data_get(dat, i);
+    const unsigned int isrc = data_find(dsrc, di);
+    if (isrc)
+      di->y = dsrc->data[isrc - 1].y;
   }
 
   /* write the source dataset. */
@@ -192,7 +188,7 @@ int main (int argc, char **argv) {
     datum_t *dmax = data_get(var, 0);
     for (unsigned int i = 0; i < var->N; i++) {
       datum_t *di = data_get(var, i);
-      if (di->y > dmax->y)
+      if (di->y > dmax->y && !data_find(dat, di))
         dmax = di;
     }
 
