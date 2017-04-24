@@ -6,8 +6,8 @@ WC=wc -l
 GREP=grep -RHni --color
 
 # compilation and linkage flags.
-CFLAGS=-fPIC -ggdb -O3 -std=gnu99 -I.. -Wall -Wextra
-LDFLAGS=-shared
+CFLAGS+= -fPIC -ggdb -O3 -std=gnu99 -I.. -Wall -Wextra
+LDFLAGS+= -shared
 LIBS=-lfftw3 -lvfl -lm
 
 # output library filename.

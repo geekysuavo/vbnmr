@@ -24,7 +24,7 @@
  *  integer value of the modulation table on the specified output,
  *  term/weight and dimension.
  */
-#define VTAB(k,l,d) ((quad_t*) (f))->vtab[k][l][d]
+#define VTAB(k,l,d) ((quadrature_t*) (f))->vtab[k][l][d]
 
 /* universally accessed mean-field update variables:
  *  @Dft: maximum dimension count of fft arrays.
@@ -40,7 +40,7 @@ static unsigned int nq = 0;
 static matrix_t *q, *Q;
 static fftw_plan plan;
 
-/* quad_t: structure for holding a quadrature factor.
+/* quadrature_t: structure for holding a quadrature factor.
  */
 typedef struct {
   /* @base: core factor structure members. */
@@ -58,7 +58,7 @@ typedef struct {
   vector_t *a, *x;
   matrix_t *C, *Z;
 }
-quad_t;
+quadrature_t;
 
 /* tab1_alloc(): allocate a one-dimensional table of integers.
  *
@@ -652,7 +652,7 @@ FACTOR_DIFF_VAR (quad) {
  */
 FACTOR_MEANFIELD (quad) {
   /* get the extended structure pointer. */
-  quad_t *fx = (quad_t*) f;
+  quadrature_t *fx = (quadrature_t*) f;
 
   /* check for initialization calls. */
   if (FACTOR_MEANFIELD_INIT) {
@@ -874,7 +874,7 @@ FACTOR_DIV (quad) {
  */
 FACTOR_INIT (quad) {
   /* initialize the phase table. */
-  quad_t *fx = (quad_t*) f;
+  quadrature_t *fx = (quadrature_t*) f;
   fx->vtab = NULL;
 
   /* initialize the mean-field variables. */
@@ -890,7 +890,7 @@ FACTOR_INIT (quad) {
  */
 FACTOR_RESIZE (quad) {
   /* get the extended structure pointer. */
-  quad_t *fx = (quad_t*) f;
+  quadrature_t *fx = (quadrature_t*) f;
 
   /* declare variables used for allocation. */
   unsigned int nblk;
@@ -1028,7 +1028,7 @@ FACTOR_SET (quad) {
  */
 FACTOR_FREE (quad) {
   /* free the phase table. */
-  quad_t *fx = (quad_t*) f;
+  quadrature_t *fx = (quadrature_t*) f;
   free(fx->vtab);
 
   /* free the parameter names table. */
@@ -1115,7 +1115,7 @@ int quad_set_ftsize (factor_t *f, const unsigned int n) {
  */
 static factor_type_t quad_type = {
   "quad",                                        /* name      */
-  sizeof(quad_t),                                /* size      */
+  sizeof(quadrature_t),                          /* size      */
   1,                                             /* initial D */
   2,                                             /* initial P */
   2,                                             /* initial K */

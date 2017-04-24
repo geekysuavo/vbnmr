@@ -2,6 +2,7 @@
 /* include the required headers. */
 #include <vbnmr/vbnmr.h>
 #include <vfl/util/rng.h>
+#include <vfl/util/search.h>
 
 /* signals: ground-truth parameters of the measured data.
  */
@@ -60,8 +61,8 @@ int main (int argc, char **argv) {
   if (!argc || !argv) return 1;
 
   /* declare variables for writing results to disk. */
-  char fmean[256], fvar[256], fdat[256], fnew[256];
-  FILE *fh, *fpar;
+  char fmean[256], fvar[256], fdat[256];
+  FILE *fpar;
 
   /* allocate a random number generator. */
   rng_t *R = rng_alloc();
@@ -83,7 +84,7 @@ int main (int argc, char **argv) {
   data_t *dat = data_alloc_from_grid(2, &ginit);
 
   /* set up a hybrid model. */
-  model_t *mdl = model_alloc(vbnmr_model_vfgp);
+  model_t *mdl = model_alloc(vfl_model_tauvfr);
   tauvfr_set_tau(mdl, 1.0e3);
   model_set_nu(mdl, 1.0e-6);
   model_set_data(mdl, dat);
@@ -110,6 +111,11 @@ int main (int argc, char **argv) {
     /* add the product factor to the model. */
     model_add_factor(mdl, f);
   }
+
+  /* allocate a search structure for the model. */
+  search_t *S = search_alloc(mdl, dat, &grid);
+  vector_t *xmax = vector_alloc(1);
+  search_set_outputs(S, 2);
 
   /* set the initial factor frequencies. */
   for (unsigned int j = 0; signals[j].tau; j++) {
@@ -160,7 +166,7 @@ int main (int argc, char **argv) {
   fpar = fopen("parms.dat", "w");
 
   /* loop until the maximum number of samples has been reached. */
-  while (dat->N <= 100) {
+  while (dat->N <= 200) {
     /* write the current dataset. */
     sprintf(fdat, "meas-%04d.dat", dat->N);
     data_fwrite(dat, fdat);
@@ -173,51 +179,32 @@ int main (int argc, char **argv) {
     logparms(fpar, opt);
 
     /* write the vfr result. */
-    vfgp_set_mode(mdl, 0);
-    model_predict_all(mdl, mean, var);
-    sprintf(fmean, "vfr-mean-%04d.dat", dat->N);
-    sprintf(fvar, "vfr-var-%04d.dat", dat->N);
-    data_fwrite(mean, fmean);
-    data_fwrite(var, fvar);
-
-    /* write the gp result. */
-    vfgp_set_mode(mdl, 1);
-    model_predict_all(mdl, mean, var);
-    sprintf(fmean, "gp-mean-%04d.dat", dat->N);
-    sprintf(fvar, "gp-var-%04d.dat", dat->N);
-    data_fwrite(mean, fmean);
-    data_fwrite(var, fvar);
-
-    /* locate the point with maximal posterior variance. */
-    datum_t *dmax = data_get(var, 0);
-    for (unsigned int i = 0; i < var->N; i++) {
-      datum_t *di = data_get(var, i);
-      if (di->y > dmax->y)
-        dmax = di;
+    if (dat->N % 10 == 0) {
+      model_predict_all(mdl, mean, var);
+      sprintf(fmean, "vfr-mean-%04d.dat", dat->N);
+      sprintf(fvar, "vfr-var-%04d.dat", dat->N);
+      data_fwrite(mean, fmean);
+      data_fwrite(var, fvar);
     }
 
-    /* locate the augmenting point in the source dataset. */
+    /* execute a search. */
+    search_execute(S, xmax);
+
+    /* locate all augmenting points in the source dataset. */
     datum_t *daug = NULL;
     for (unsigned int i = 0; i < dsrc->N; i++) {
       daug = data_get(dsrc, i);
-      if (daug->p == dmax->p && vector_equal(daug->x, dmax->x)) {
+      if (vector_equal(daug->x, xmax))
         data_augment(dat, daug);
-        break;
-      }
     }
-
-    /* output the augmenting point. */
-    sprintf(fnew, "new-%04u.dat", dat->N - 1);
-    fh = fopen(fnew, "w");
-    fprintf(fh, "%u %16.9le %16.9le\n", daug->p,
-            vector_get(daug->x, 0), daug->y);
-    fclose(fh);
   }
 
   /* close the parameter log file. */
   fclose(fpar);
 
   /* free the structures. */
+  search_free(S);
+  vector_free(xmax);
   optim_free(opt);
   model_free(mdl);
   data_free(dsrc);
