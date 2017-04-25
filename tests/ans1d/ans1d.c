@@ -8,16 +8,16 @@
 static const struct {
   double w, omega, mu, tau, alpha, beta;
 } signals[] = {
-  { 1.0, -0.083, 0.0, 25.0, 50.0, 5.0e4 },
-  { 1.0, -0.026, 0.0, 25.0, 50.0, 5.0e4 },
-  { 0.1,  0.038, 0.0, 25.0, 50.0, 5.0e4 },
-  { 0.3,  0.042, 0.0, 25.0, 50.0, 5.0e4 },
-  { 1.0,  0.074, 0.0, 25.0, 50.0, 5.0e4 },
-  { 0.9,  0.091, 0.0, 25.0, 50.0, 5.0e4 },
-  { 0.0,  0.0,   0.0, 25.0, 50.0, 5.0e4 },
-  { 0.0,  0.0,   0.0, 25.0, 50.0, 5.0e4 },
-  { 0.0,  0.0,   0.0, 25.0, 50.0, 5.0e4 },
-  { 0.0,  0.0,   0.0, 25.0, 50.0, 5.0e4 },
+  { 1.0, -0.083, 0.0, 50.0, 50.0, 5.0e4 },
+  { 1.0, -0.026, 0.0, 50.0, 50.0, 5.0e4 },
+  { 0.1,  0.038, 0.0, 50.0, 50.0, 5.0e4 },
+  { 0.3,  0.042, 0.0, 50.0, 50.0, 5.0e4 },
+  { 1.0,  0.074, 0.0, 50.0, 50.0, 5.0e4 },
+  { 0.9,  0.091, 0.0, 50.0, 50.0, 5.0e4 },
+  { 0.0,  0.0,   0.0, 50.0, 50.0, 5.0e4 },
+  { 0.0,  0.0,   0.0, 50.0, 50.0, 5.0e4 },
+  { 0.0,  0.0,   0.0, 50.0, 50.0, 5.0e4 },
+  { 0.0,  0.0,   0.0, 50.0, 50.0, 5.0e4 },
   { 0.0,  0.0,   0.0,  0.0,  0.0, 0.0   } /* end marker. */
 };
 
@@ -78,7 +78,7 @@ int main (int argc, char **argv) {
   data_t *var = data_alloc_from_grid(2, &grid);
 
   /* allocate a measured dataset. */
-  double ginit_values[] = { 0.0, 10000.0, 10000.0 };
+  double ginit_values[] = { 0.0, 1.0, 0.0 };
   matrix_view_t ginit = matrix_view_array(ginit_values, 1, 3);
   data_t *dat = data_alloc_from_grid(2, &ginit);
 
@@ -156,7 +156,7 @@ int main (int argc, char **argv) {
   fpar = fopen("parms.dat", "w");
 
   /* loop until the maximum number of samples has been reached. */
-  while (dat->N <= 100) {
+  while (dat->N <= 200) {
     /* write the current dataset. */
     sprintf(fdat, "meas-%04d.dat", dat->N);
     data_fwrite(dat, fdat);

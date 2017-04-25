@@ -9,16 +9,16 @@
 static const struct {
   double w, omega, mu, tau, alpha, beta;
 } signals[] = {
-  { 1.0, -0.083, 0.0, 25.0, 50.0, 5.0e4 },
-  { 1.0, -0.026, 0.0, 25.0, 50.0, 5.0e4 },
-  { 0.1,  0.038, 0.0, 25.0, 50.0, 5.0e4 },
-  { 0.3,  0.042, 0.0, 25.0, 50.0, 5.0e4 },
-  { 1.0,  0.074, 0.0, 25.0, 50.0, 5.0e4 },
-  { 0.9,  0.091, 0.0, 25.0, 50.0, 5.0e4 },
-  { 0.0,  0.0,   0.0, 25.0, 50.0, 5.0e4 },
-  { 0.0,  0.0,   0.0, 25.0, 50.0, 5.0e4 },
-  { 0.0,  0.0,   0.0, 25.0, 50.0, 5.0e4 },
-  { 0.0,  0.0,   0.0, 25.0, 50.0, 5.0e4 },
+  { 1.0, -0.083, 0.0, 50.0, 50.0, 5.0e4 },
+  { 1.0, -0.026, 0.0, 50.0, 50.0, 5.0e4 },
+  { 0.1,  0.038, 0.0, 50.0, 50.0, 5.0e4 },
+  { 0.3,  0.042, 0.0, 50.0, 50.0, 5.0e4 },
+  { 1.0,  0.074, 0.0, 50.0, 50.0, 5.0e4 },
+  { 0.9,  0.091, 0.0, 50.0, 50.0, 5.0e4 },
+  { 0.0,  0.0,   0.0, 50.0, 50.0, 5.0e4 },
+  { 0.0,  0.0,   0.0, 50.0, 50.0, 5.0e4 },
+  { 0.0,  0.0,   0.0, 50.0, 50.0, 5.0e4 },
+  { 0.0,  0.0,   0.0, 50.0, 50.0, 5.0e4 },
   { 0.0,  0.0,   0.0,  0.0,  0.0, 0.0   } /* end marker. */
 };
 
@@ -61,8 +61,8 @@ int main (int argc, char **argv) {
   if (!argc || !argv) return 1;
 
   /* declare variables for writing results to disk. */
-  char fmean[256], fvar[256], fdat[256];
-  FILE *fpar;
+  char fmean[256], fvar[256], fdat[256], fnew[256];
+  FILE *fh, *fpar;
 
   /* allocate a random number generator. */
   rng_t *R = rng_alloc();
@@ -79,7 +79,7 @@ int main (int argc, char **argv) {
   data_t *var = data_alloc_from_grid(2, &grid);
 
   /* allocate a measured dataset. */
-  double ginit_values[] = { 0.0, 10000.0, 10000.0 };
+  double ginit_values[] = { 0.0, 1.0, 0.0 };
   matrix_view_t ginit = matrix_view_array(ginit_values, 1, 3);
   data_t *dat = data_alloc_from_grid(2, &ginit);
 
@@ -174,25 +174,36 @@ int main (int argc, char **argv) {
     /* log the parameters. */
     logparms(fpar, opt);
 
-    /* write the vfr result. */
-    if (dat->N % 10 == 0) {
-      model_predict_all(mdl, mean, var);
-      sprintf(fmean, "vfr-mean-%04d.dat", dat->N);
-      sprintf(fvar, "vfr-var-%04d.dat", dat->N);
-      data_fwrite(mean, fmean);
-      data_fwrite(var, fvar);
-    }
-
     /* execute a search. */
     search_execute(S, xmax);
+
+    /* write the vfr result. */
+    model_predict_all(mdl, mean, var);
+    sprintf(fmean, "vfr-mean-%04d.dat", dat->N);
+    sprintf(fvar, "vfr-var-%04d.dat", dat->N);
+    data_fwrite(mean, fmean);
+    data_fwrite(var, fvar);
+
+    /* open the augmenting point file. */
+    sprintf(fnew, "new-%04u.dat", dat->N - 1);
+    fh = fopen(fnew, "w");
 
     /* locate all augmenting points in the source dataset. */
     datum_t *daug = NULL;
     for (unsigned int i = 0; i < dsrc->N; i++) {
       daug = data_get(dsrc, i);
-      if (vector_equal(daug->x, xmax))
+      if (vector_equal(daug->x, xmax)) {
+        /* augment the dataset. */
         data_augment(dat, daug);
+
+        /* output the augmenting point. */
+        fprintf(fh, "%u %16.9le %16.9le\n", daug->p,
+                vector_get(daug->x, 0), daug->y);
+      }
     }
+
+    /* close the augmenting point file. */
+    fclose(fh);
   }
 
   /* close the parameter log file. */
