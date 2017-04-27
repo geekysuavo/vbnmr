@@ -4,17 +4,22 @@
 A framework for approximate Bayesian inference from off-grid, non-uniformly,
 non-simultaneously sampled multidimensional NMR data.
 
-This **vbnmr** library is a bespoke implementation of Variational Feature
-Regression (VFR) for the multidimensional NMR signal model, specifically
-aimed at active nonuniform sampling (Active NUS). The details of VFR are
-in preparation for submission as:
+The **vbnmr** library extends the
+[variational feature learning](http://github.com/geekysuavo/vfl) library
+with a **quad** factor type and a **vfgp** model type. The **quad**
+factor encodes multidimensional multicomplex quadrature cosines, which
+are a fundamental component of the NMR signal model. The **vfgp**
+model type was originally used for active learning, but this has
+been superseded by the GPU-assisted search structure in VFL.
 
-> Worley, B., Nilges, M., Malliavin, T. E., _Variational Features for
-> Regression and Classification_, Journal of Machine Learning Research,
-> 2017.
+While the quadrature factor is suited for both on-grid and off-grid
+learning _via_ gradient-based optimization, it also supports fast
+mean-field inference when the data lie on an integer grid.
 
-A more general implementation of VFR is maintained in the
-[VFL GitHub repository](http://github.com/geekysuavo/vfl).
+More details are in preparation for submission to:
+
+> Worley, B., Malliavin, T. E., Nilges, M., _Active nonuniform sampling_,
+> Journal of Magnetic Resonance, 2017.
 
 ## Introduction
 
