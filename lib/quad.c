@@ -1,7 +1,8 @@
 
-/* include the quadrature and vfl integer headers. */
+/* include the quadrature and vfl object headers. */
 #include <vbnmr/quad.h>
-#include <vfl/base/int.h>
+#include <vfl/base/list.h>
+#include <vfl/base/float.h>
 
 /* include the fftw header. */
 #include <fftw3.h>
@@ -1047,9 +1048,13 @@ FACTOR_FREE (quad) {
  */
 int quad_set_dims (factor_t *f, const unsigned int D) {
   /* resize the factor to accomodate the correct number of
-   * dimensions, weights, and parameters.
+   * dimensions, parameters, and weights.
    */
-  return factor_resize(f, D, 1 << D, 2 * D);
+  if (!factor_resize(f, D, 2 * D, 1 << D) || !quad_set_ftsize(f, Nft))
+    return 0;
+
+  /* return success. */
+  return 1;
 }
 
 /* quad_set_ftsize(): set the number of complex points used by
@@ -1066,6 +1071,10 @@ int quad_set_ftsize (factor_t *f, const unsigned int n) {
   /* determine the new matrix sizes. */
   const unsigned int Dnew = (f && f->D > Dft ? f->D : Dft);
   const unsigned int Nnew = (n > Nft ? n : Nft);
+
+  /* check if the point count is unchanged at zero. */
+  if (Nft == 0 && Nnew == Nft)
+    return 1;
 
   /* check if the sizes have not changed. */
   if (Dnew == Dft && Nnew == Nft)
@@ -1114,6 +1123,108 @@ int quad_set_ftsize (factor_t *f, const unsigned int n) {
 
 /* --- */
 
+/* quad_getprops(): return a list of means or precisions
+ * from a multidimensional quadrature factor.
+ *
+ * arguments:
+ *  @f: factor structure pointer.
+ *  @p0: parameter offset.
+ *
+ * returns:
+ *  newly allocated and initialized list of parameters,
+ *  with one entry for each dimension.
+ */
+static object_t *quad_getprops (const factor_t *f, const unsigned int p0) {
+  /* return floats from one-dimensional factors. */
+  if (f->D == 1)
+    return (object_t*) float_alloc_with_value(vector_get(f->par, p0));
+
+  /* allocate a list for parameters. */
+  list_t *lst = list_alloc_with_length(f->D);
+  if (!lst)
+    return NULL;
+
+  /* store the list elements. */
+  for (unsigned int d = 0, p = p0; d < f->D; d++, p += 2) {
+    /* allocate a float for the current list element. */
+    flt_t *elem = float_alloc_with_value(vector_get(f->par, p));
+    if (!elem) {
+      obj_release((object_t*) lst);
+      return NULL;
+    }
+
+    /* store the float in the list. */
+    list_set(lst, d, (object_t*) elem);
+  }
+
+  /* return the new list. */
+  return (object_t*) lst;
+}
+
+/* quad_setprops(): set the means or precisions
+ * of a multidimensional quadrature factor.
+ *
+ * arguments:
+ *  @f: factor structure pointer.
+ *  @val: float or list of values.
+ *  @p0: parameter offset.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+static int quad_setprops (factor_t *f, object_t *val,
+                          const unsigned int p0) {
+  /* handle one-dimensional assignments. */
+  if (f->D == 1) {
+    /* admit only numbers for one-dimensional factors. */
+    if (!OBJECT_IS_NUM(val))
+      return 0;
+
+    /* set the factor parameter. */
+    return factor_set(f, p0, num_get(val));
+  }
+
+  /* admit only lists for multidimensional factors. */
+  if (!OBJECT_IS_LIST(val))
+    return 0;
+
+  /* check that the list length matches the factor dimensionality. */
+  list_t *lst = (list_t*) val;
+  if (lst->len != (size_t) f->D)
+    return 0;
+
+  /* loop over the list elements. */
+  for (unsigned int d = 0, p = p0; d < f->D; d++, p += 2) {
+    /* admit only numbers as list elements. */
+    object_t *elem = list_get(lst, d);
+    if (!OBJECT_IS_NUM(elem))
+      return 0;
+
+    /* set the factor parameter. */
+    if (!factor_set(f, p, num_get(elem)))
+      return 0;
+  }
+
+  /* return success. */
+  return 1;
+}
+
+/* quad_getprop_mu(): get a quadrature factor mean parameter.
+ *  - see vfl/object_getprop_fn() for details.
+ */
+static object_t *quad_getprop_mu (const factor_t *f) {
+  /* return either a float or a list. */
+  return quad_getprops(f, P_MU);
+}
+
+/* quad_getprop_tau(): get a quadrature factor precision parameter.
+ *  - see vfl/object_getprop_fn() for details.
+ */
+static object_t *quad_getprop_tau (const factor_t *f) {
+  /* return either a float or a list. */
+  return quad_getprops(f, P_TAU);
+}
+
 /* quad_getprop_dims(): get a quadrature factor dimensionality.
  *  - see vfl/object_getprop_fn() for details.
  */
@@ -1129,6 +1240,22 @@ static int_t *quad_getprop_ftsize (factor_t *f) {
   /* return the fourier transform size as a new integer. */
   int_t *iobj = int_alloc_with_value(Nft);
   return (f ? iobj : iobj);
+}
+
+/* quad_setprop_mu(): set a quadrature factor mean parameter.
+ *  - see vfl/object_setprop_mu() for details.
+ */
+static int quad_setprop_mu (factor_t *f, object_t *val) {
+  /* set the mean parameter(s). */
+  return quad_setprops(f, val, P_MU);
+}
+
+/* quad_setprop_tau(): set a quadrature factor precision parameter.
+ *  - see vfl/object_setprop_mu() for details.
+ */
+static int quad_setprop_tau (factor_t *f, object_t *val) {
+  /* set the precision parameter(s). */
+  return quad_setprops(f, val, P_TAU);
 }
 
 /* quad_setprop_dims(): set a quadrature factor dimensionality.
@@ -1169,12 +1296,22 @@ static int quad_setprop_ftsize (factor_t *f, object_t *val) {
  */
 static object_property_t quad_properties[] = {
   FACTOR_PROP_BASE,
-  { "D",
+  { "mu",
+    (object_getprop_fn) quad_getprop_mu,
+    (object_setprop_fn) quad_setprop_mu
+  },
+  { "tau",
+    (object_getprop_fn) quad_getprop_tau,
+    (object_setprop_fn) quad_setprop_tau
+  },
+  { "dims",
     (object_getprop_fn) quad_getprop_dims,
-    (object_setprop_fn) quad_setprop_dims },
+    (object_setprop_fn) quad_setprop_dims
+  },
   { "ftsize",
     (object_getprop_fn) quad_getprop_ftsize,
-    (object_setprop_fn) quad_setprop_ftsize },
+    (object_setprop_fn) quad_setprop_ftsize
+  },
   { NULL, NULL, NULL }
 };
 

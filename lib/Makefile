@@ -28,12 +28,12 @@ all: $(LIB)
 
 # LIB: library linkage make target.
 $(LIB): $(OBJ)
-	@echo " LD $@"
+	@echo " LD   $@"
 	@$(CC) $(LDFLAGS) $^ -o $@ $(LIBS)
 
 # source compilation target.
 .c.o:
-	@echo " CC $^"
+	@echo " CC   $^"
 	@$(CC) $(CFLAGS) -c $^ -o $@
 
 # intermediate file cleanup target.
