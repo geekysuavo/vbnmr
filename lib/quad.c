@@ -964,18 +964,18 @@ FACTOR_KERNEL (quad) {
   /* define kernel code format strings. */
   const char *fmtA = "cov = 1.0;\n";
   const char *fmtB = "{\n\
-const float xd = x1[%u] - x2[%u];\n\
-const float mu = par[%u];\n\
-const float tau = par[%u];\n\
+const double xd = x1[%u] - x2[%u];\n\
+const double mu = par[%u];\n\
+const double tau = par[%u];\n\
 const unsigned int d1 = p1 & %u;\n\
 const unsigned int d2 = p2 & %u;\n\
-const float zd = (d1 == d2 ? 0.0f : d1 ? -%lff : %lff);\n\
-cov *= exp(-0.5f * xd * xd / tau) * cos(mu * xd + zd);\n\
+const double zd = (d1 == d2 ? 0.0 : d1 ? -%lf : %lf);\n\
+cov *= exp(-0.5 * xd * xd / tau) * cos(mu * xd + zd);\n\
 }\n";
 
   /* allocate the kernel code string. */
   const unsigned int len = strlen(fmtA) + f->D * strlen(fmtB);
-  char *kstr = malloc(len + 8);
+  char *kstr = malloc(len + 24);
   if (!kstr)
     return NULL;
 
