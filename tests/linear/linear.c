@@ -1,7 +1,6 @@
 
 /* include the required headers. */
 #include <vbnmr/vbnmr.h>
-#include <vfl/util/rng.h>
 
 /* main(): application entry point.
  *
@@ -107,17 +106,15 @@ int main (int argc, char **argv) {
   model_reset(mdl);
 
   /* optimize using an initial round of mean-field. */
-  optim_t *opt = optim_alloc(vfl_optim_mf);
-  optim_set_model(opt, mdl);
-  optim_set_max_iters(opt, 1);
-  optim_execute(opt);
-  optim_free(opt);
+  optim_t *opt_mf = optim_alloc(vfl_optim_mf);
+  optim_set_model(opt_mf, mdl);
+  optim_set_max_iters(opt_mf, 1);
+  optim_execute(opt_mf);
 
   /* optimize further using natural gradients. */
-  opt = optim_alloc(vfl_optim_fg);
-  optim_set_model(opt, mdl);
-  optim_execute(opt);
-  optim_free(opt);
+  optim_t *opt_fg = optim_alloc(vfl_optim_fg);
+  optim_set_model(opt_fg, mdl);
+  optim_execute(opt_fg);
 
   /* loop again to extract results. */
   for (unsigned int j = 0, k = 0; j < mdl->M; j++, k += 2) {
@@ -146,10 +143,10 @@ int main (int argc, char **argv) {
              c == par->cols - 1 ? "\n" : " ");
 
   /* free the structures. */
+  obj_release((object_t*) opt_mf);
+  obj_release((object_t*) opt_fg);
+  obj_release((object_t*) R);
   matrix_free(par);
-  model_free(mdl);
-  data_free(dat);
-  rng_free(R);
 
   /* return success. */
   return 0;

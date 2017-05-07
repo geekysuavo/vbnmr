@@ -66,7 +66,6 @@ int main (int argc, char **argv) {
   optim_set_model(opt, mdl);
   optim_set_max_iters(opt, 1);
   optim_execute(opt);
-  optim_free(opt);
 
   /* allocate datasets for fit analysis. */
   data_t *fit_mean = data_alloc_from_file(INFILE);
@@ -90,12 +89,11 @@ int main (int argc, char **argv) {
   data_fwrite(var, "var.dat");
 
   /* free the structures. */
-  model_free(mdl);
-  data_free(fit_mean);
-  data_free(fit_var);
-  data_free(mean);
-  data_free(var);
-  data_free(dat);
+  obj_release((object_t*) fit_mean);
+  obj_release((object_t*) fit_var);
+  obj_release((object_t*) mean);
+  obj_release((object_t*) var);
+  obj_release((object_t*) opt);
 
   /* return success. */
   return 0;

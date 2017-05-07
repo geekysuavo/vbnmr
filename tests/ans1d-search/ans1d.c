@@ -1,8 +1,6 @@
 
 /* include the required headers. */
 #include <vbnmr/vbnmr.h>
-#include <vfl/util/rng.h>
-#include <vfl/util/search.h>
 
 /* signals: ground-truth parameters of the measured data.
  */
@@ -113,8 +111,11 @@ int main (int argc, char **argv) {
   }
 
   /* allocate a search structure for the model. */
-  search_t *S = search_alloc(mdl, dat, &grid);
   vector_t *xmax = vector_alloc(1);
+  search_t *S = search_alloc();
+  search_set_model(S, mdl);
+  search_set_data(S, dat);
+  search_set_grid(S, &grid);
   search_set_outputs(S, 2);
 
   /* set the initial factor frequencies. */
@@ -210,15 +211,13 @@ int main (int argc, char **argv) {
   fclose(fpar);
 
   /* free the structures. */
-  search_free(S);
+  obj_release((object_t*) dsrc);
+  obj_release((object_t*) mean);
+  obj_release((object_t*) var);
+  obj_release((object_t*) opt);
+  obj_release((object_t*) S);
+  obj_release((object_t*) R);
   vector_free(xmax);
-  optim_free(opt);
-  model_free(mdl);
-  data_free(dsrc);
-  data_free(mean);
-  data_free(var);
-  data_free(dat);
-  rng_free(R);
 
   /* return success. */
   return 0;

@@ -1,6 +1,7 @@
 
 /* include the variational feature gaussian process header. */
 #include <vbnmr/vfgp.h>
+#include <vfl/base/int.h>
 
 /* vfgp_t: structure for holding a hybrid gaussian process,
  * fixed-tau vfr model.
@@ -280,11 +281,81 @@ int vfgp_set_mode (model_t *mdl, const unsigned int gp_enable) {
   return 1;
 }
 
+/* --- */
+
+/* vfgp_getprop_mode(): get the gp mode of a vfgp object.
+ *  - see vfl/object_getprop_fn() for details.
+ */
+static int_t *vfgp_getprop_mode (model_t *mdl) {
+  /* return the gp mode as a new integer. */
+  vfgp_t *mdx = (vfgp_t*) mdl;
+  return int_alloc_with_value(mdx->gp_enable);
+}
+
+/* vfgp_setprop_mode(): set the gp mode of a vfgp object.
+ *  - see vfl/object_setprop_fn() for details.
+ */
+static int vfgp_setprop_mode (model_t *mdl, object_t *val) {
+  /* admit only integer values. */
+  if (!OBJECT_IS_INT(val))
+    return 0;
+
+  /* admit only boolean values. */
+  const long ival = int_get((int_t*) val);
+  if (ival != 0 && ival != 1)
+    return 0;
+
+  /* set the gp mode and return. */
+  return vfgp_set_mode(mdl, ival);
+}
+
+/* vfgp_properties: array of accessible vfgp model object properties.
+ */
+static object_property_t vfgp_properties[] = {
+  MODEL_PROP_BASE,
+  MODEL_PROP_TAU,
+  MODEL_PROP_NU,
+  { "gp",
+    (object_getprop_fn) vfgp_getprop_mode,
+    (object_setprop_fn) vfgp_setprop_mode
+  },
+  { NULL, NULL, NULL }
+};
+
+/* --- */
+
+/* vfgp_methods: array of callable vfgp model object methods.
+ */
+static object_method_t vfgp_methods[] = {
+  MODEL_METHOD_BASE,
+  { NULL, NULL }
+};
+
+/* --- */
+
 /* vfgp_type: variational feature gaussian process type structure.
  */
 static model_type_t vfgp_type = {
-  "vfgp",                                        /* name      */
-  sizeof(vfgp_t),                                /* size      */
+  { /* base: */
+    "vfgp",                                      /* name      */
+    sizeof(vfgp_t),                              /* size      */
+
+    (object_init_fn) model_init,                 /* init      */
+    NULL,                                        /* copy      */
+    (object_free_fn) model_free,                 /* free      */
+
+    NULL,                                        /* add       */
+    NULL,                                        /* sub       */
+    NULL,                                        /* mul       */
+    NULL,                                        /* div       */
+    NULL,                                        /* pow       */
+
+    NULL,                                        /* get       */
+    NULL,                                        /* set       */
+    vfgp_properties,                             /* props     */
+    vfgp_methods                                 /* methods   */
+  },
+
   vfgp_init,                                     /* init      */
   vfgp_bound,                                    /* bound     */
   vfgp_predict,                                  /* predict   */

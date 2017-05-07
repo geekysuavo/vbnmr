@@ -1,6 +1,7 @@
 
-/* include the quad header. */
+/* include the quadrature and vfl integer headers. */
 #include <vbnmr/quad.h>
+#include <vfl/base/int.h>
 
 /* include the fftw header. */
 #include <fftw3.h>
@@ -1111,11 +1112,106 @@ int quad_set_ftsize (factor_t *f, const unsigned int n) {
   return 1;
 }
 
+/* --- */
+
+/* quad_getprop_dims(): get a quadrature factor dimensionality.
+ *  - see vfl/object_getprop_fn() for details.
+ */
+static int_t *quad_getprop_dims (factor_t *f) {
+  /* return the factor dimensionality as a new integer. */
+  return int_alloc_with_value(f->D);
+}
+
+/* quad_getprop_ftsize(): get a quadrature factor fourier transform size.
+ *  - see vfl/object_getprop_fn() for details.
+ */
+static int_t *quad_getprop_ftsize (factor_t *f) {
+  /* return the fourier transform size as a new integer. */
+  int_t *iobj = int_alloc_with_value(Nft);
+  return (f ? iobj : iobj);
+}
+
+/* quad_setprop_dims(): set a quadrature factor dimensionality.
+ *  - see vfl/object_setprop_fn() for details.
+ */
+static int quad_setprop_dims (factor_t *f, object_t *val) {
+  /* admit only integer values. */
+  if (!OBJECT_IS_INT(val))
+    return 0;
+
+  /* admit only positive dimensionalities. */
+  const long ival = int_get((int_t*) val);
+  if (ival <= 0)
+    return 0;
+
+  /* set the dimensionality and return. */
+  return quad_set_dims(f, ival);
+}
+
+/* quad_setprop_ftsize(): set a quadrature factor fourier transform size.
+ *  - see vfl/object_setprop_fn() for details.
+ */
+static int quad_setprop_ftsize (factor_t *f, object_t *val) {
+  /* admit only integer values. */
+  if (!OBJECT_IS_INT(val))
+    return 0;
+
+  /* admit only positive sizes. */
+  const long ival = int_get((int_t*) val);
+  if (ival <= 0)
+    return 0;
+
+  /* set the fourier transform size and return. */
+  return quad_set_ftsize(f, ival);
+}
+
+/* quad_properties: array of accessible object properties.
+ */
+static object_property_t quad_properties[] = {
+  FACTOR_PROP_BASE,
+  { "D",
+    (object_getprop_fn) quad_getprop_dims,
+    (object_setprop_fn) quad_setprop_dims },
+  { "ftsize",
+    (object_getprop_fn) quad_getprop_ftsize,
+    (object_setprop_fn) quad_setprop_ftsize },
+  { NULL, NULL, NULL }
+};
+
+/* --- */
+
+/* quad_methods: array of callable object methods.
+ */
+static object_method_t quad_methods[] = {
+  FACTOR_METHOD_BASE,
+  { NULL, NULL }
+};
+
+/* --- */
+
 /* quad_type: quadrature factor type structure.
  */
 static factor_type_t quad_type = {
-  "quad",                                        /* name      */
-  sizeof(quadrature_t),                          /* size      */
+  { /* base: */
+    "quad",                                      /* name      */
+    sizeof(quadrature_t),                        /* size      */
+
+    (object_init_fn) factor_init,                /* init      */
+    (object_copy_fn) factor_copy,                /* copy      */
+    (object_free_fn) factor_free,                /* free      */
+
+    (object_binary_fn) factor_add,               /* add       */
+    NULL,                                        /* sub       */
+    (object_binary_fn) factor_mul,               /* mul       */
+    NULL,                                        /* div       */
+    NULL,                                        /* pow       */
+
+    NULL,                                        /* get       */
+    NULL,                                        /* set       */
+    quad_properties,                             /* props     */
+    quad_methods                                 /* methods   */
+  },
+
   1,                                             /* initial D */
   2,                                             /* initial P */
   2,                                             /* initial K */

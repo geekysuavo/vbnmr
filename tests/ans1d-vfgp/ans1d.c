@@ -1,7 +1,6 @@
 
 /* include the required headers. */
 #include <vbnmr/vbnmr.h>
-#include <vfl/util/rng.h>
 
 /* signals: ground-truth parameters of the measured data.
  */
@@ -214,13 +213,11 @@ int main (int argc, char **argv) {
   fclose(fpar);
 
   /* free the structures. */
-  optim_free(opt);
-  model_free(mdl);
-  data_free(dsrc);
-  data_free(mean);
-  data_free(var);
-  data_free(dat);
-  rng_free(R);
+  obj_release((object_t*) dsrc);
+  obj_release((object_t*) mean);
+  obj_release((object_t*) var);
+  obj_release((object_t*) opt);
+  obj_release((object_t*) R);
 
   /* return success. */
   return 0;

@@ -72,11 +72,9 @@ int main (int argc, char **argv) {
   data_fwrite(var, "gp-var.dat");
 
   /* free the structures. */
-  optim_free(opt);
-  model_free(mdl);
-  data_free(mean);
-  data_free(var);
-  data_free(dat);
+  obj_release((object_t*) mean);
+  obj_release((object_t*) var);
+  obj_release((object_t*) opt);
 
   /* return success. */
   return 0;

@@ -3,7 +3,7 @@
 #ifndef __VBNMR_VFGP_H__
 #define __VBNMR_VFGP_H__
 
-/* include the vfl dataset and model headers. */
+/* include the vfl model header. */
 #include <vfl/model.h>
 
 /* function declarations (vfgp.c): */

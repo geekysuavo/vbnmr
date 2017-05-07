@@ -1,7 +1,6 @@
 
 /* include the required headers. */
 #include <vbnmr/vbnmr.h>
-#include <vfl/util/rng.h>
 
 /* main(): application entry point.
  *
@@ -58,7 +57,8 @@ int main (int argc, char **argv) {
   /* optimize. */
   optim_t *opt = optim_alloc(vfl_optim_fg);
   optim_set_model(opt, mdl);
-  optim_set_lipschitz_init(opt, 0.001);
+  optim_set_max_iters(opt, 1000);
+  optim_set_lipschitz_init(opt, 0.01);
   optim_execute(opt);
 
   /* allocate datasets for prediction. */
@@ -79,12 +79,10 @@ int main (int argc, char **argv) {
   data_fwrite(var, "gp-var.dat");
 
   /* free the structures. */
-  optim_free(opt);
-  model_free(mdl);
-  data_free(mean);
-  data_free(var);
-  data_free(dat);
-  rng_free(R);
+  obj_release((object_t*) mean);
+  obj_release((object_t*) var);
+  obj_release((object_t*) opt);
+  obj_release((object_t*) R);
 
   /* return success. */
   return 0;

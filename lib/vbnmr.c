@@ -11,15 +11,11 @@ int vbnmr_init (void) {
   /* declare a variable to store the initialization result. */
   int res = 1;
 
-  /* initialize vfl. */
-  if (!vfl_init())
-    return 0;
-
   /* register vbnmr model types. */
-  res &= vfl_register_model_type(vbnmr_model_vfgp);
+  res &= vfl_register_type((object_type_t*) vbnmr_model_vfgp);
 
   /* register vbnmr factor types. */
-  res &= vfl_register_factor_type(vbnmr_factor_quad);
+  res &= vfl_register_type((object_type_t*) vbnmr_factor_quad);
 
   /* return the result. */
   return res;
