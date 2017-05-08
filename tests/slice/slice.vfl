@@ -1,0 +1,51 @@
+
+# import the vbnmr module.
+import vbnmr;
+
+# create a pseudorandom number generator.
+rand = rng(seed: 7321);
+
+# create a model.
+mdl = vfgp(
+  tau: 1e4,
+  nu: 1e-8,
+  data: data(file: 'slice.dat'),
+  factors: 10 * [decay(alpha: 100, beta: 10, fixed: true) *
+                 quad(mu: 0, tau: 1e-6)]
+);
+
+# randomize the factor means.
+for j in std.range(n: mdl.M) {
+  mdl.factors[j][1].mu = rand.normal(sigma: 1e3);
+  mdl.factors[j].update();
+}
+
+# create a full-gradient optimizer.
+opt = fg(
+  model: mdl,
+  lipschitzInit: 100
+);
+
+# optimize.
+opt.execute();
+
+# allocate datasets for prediction.
+mean = data();
+var = data();
+
+# augment the prediction datasets with grids.
+G = [[0, 1e-4, 1.0]];
+mean.augment(outputs: [0, 1], grid: G);
+var.augment(outputs: [0, 1], grid: G);
+
+# compute and write the vfr prediction.
+mdl.predict(mean: mean, var: var);
+mean.write(file: 'vfr-mean.dat');
+var.write(file: 'vfr-var.dat');
+
+# compute and write the gp prediction.
+mdl.gp = true;
+mdl.predict(mean: mean, var: var);
+mean.write(file: 'gp-mean.dat');
+var.write(file: 'gp-var.dat');
+
