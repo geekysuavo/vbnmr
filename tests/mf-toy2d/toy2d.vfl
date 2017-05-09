@@ -1,0 +1,52 @@
+
+# import the vbnmr module.
+import vbnmr;
+
+# define the input filename.
+infile = 'toy2d.dat';
+
+# create a model.
+mdl = vfgp(
+  tau: 1.0,
+  nu: 1e-6,
+  data: data(file: infile),
+  factors: 3 * [decay(dim: 0, alpha: 10, beta: 290e3, fixed: true) *
+                decay(dim: 1, alpha: 10, beta: 15e3, fixed: true) *
+                quad(dims: 2, mu: [0.66867, 0], tau: [9, 2],
+                     ftsize: 65536)]
+);
+
+# create a mean-field optimizer.
+opt = mf(
+  model: mdl,
+  maxIters: 1
+);
+
+# optimize.
+opt.execute();
+
+# allocate datasets for fit storage.
+fitMean = data(file: infile);
+fitVar = data(file: infile);
+
+# compute and write the fit prediction.
+mdl.predict(mean: fitMean, var: fitVar);
+fitMean.write(file: 'fit-mean.dat');
+fitVar.write(file: 'fit-var.dat');
+
+# allocate datasets for prediction.
+mean = data();
+var = data();
+
+# augment the prediction datasets with grids.
+G = [[0, 0.2,  60],
+     [0, 1.0, 140]];
+nout = std.range(n: 4);
+mean.augment(outputs: nout, grid: G);
+var.augment(outputs: nout, grid: G);
+
+# compute and write the vfr prediction.
+mdl.predict(mean: mean, var: var);
+mean.write(file: 'mean.dat');
+var.write(file: 'var.dat');
+
