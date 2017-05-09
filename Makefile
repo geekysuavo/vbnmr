@@ -11,10 +11,11 @@ DIR=vbnmr
 DATE=$(shell date +%Y%m%d)
 
 # non-file targets.
-.PHONY: all clean again lines fixme dist
+.PHONY: all clean again install lines fixme dist
 
 # global, default make target.
 all:
+	@$(MAKE) -sC lib
 
 # intermediate file cleanup target.
 clean:
@@ -30,6 +31,11 @@ clean:
 
 # full recompilation target.
 again: clean all
+
+# installation target.
+install:
+	@$(MAKE) -sC lib install
+	@$(MAKE) -sC vbnmr install
 
 # line-count reporting target.
 lines:

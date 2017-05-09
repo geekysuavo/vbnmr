@@ -19,8 +19,13 @@ SRC=vbnmr.c quad.c vfgp.c
 # filenames of compiled objects.
 OBJ=$(SRC:.c=.o)
 
+# installation directories.
+DESTDIR=
+PREFIX=$(DESTDIR)/usr/local
+LIBDIR=$(PREFIX)/lib
+
 # non-file targets and accepted filename extensions.
-.PHONY: all clean again lines fixme
+.PHONY: all clean again install lines fixme
 .SUFFIXES: .c .o
 
 # global, default make target.
@@ -43,6 +48,12 @@ clean:
 
 # full recompilation target.
 again: clean all
+
+# installation target.
+install: $(LIB)
+	@echo " INSTALL $(LIB)"
+	@install -d $(LIBDIR)
+	@install $(LIB) $(LIBDIR)
 
 # line-count report target.
 lines:
