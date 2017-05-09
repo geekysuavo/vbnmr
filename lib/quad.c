@@ -1137,7 +1137,7 @@ int quad_set_ftsize (factor_t *f, const unsigned int n) {
 static object_t *quad_getprops (const factor_t *f, const unsigned int p0) {
   /* return floats from one-dimensional factors. */
   if (f->D == 1)
-    return (object_t*) float_alloc_with_value(vector_get(f->par, p0));
+    return (object_t*) float_alloc_with_value(factor_get(f, p0));
 
   /* allocate a list for parameters. */
   list_t *lst = list_alloc_with_length(f->D);
@@ -1147,7 +1147,7 @@ static object_t *quad_getprops (const factor_t *f, const unsigned int p0) {
   /* store the list elements. */
   for (unsigned int d = 0, p = p0; d < f->D; d++, p += 2) {
     /* allocate a float for the current list element. */
-    flt_t *elem = float_alloc_with_value(vector_get(f->par, p));
+    flt_t *elem = float_alloc_with_value(factor_get(f, p));
     if (!elem) {
       obj_release((object_t*) lst);
       return NULL;
