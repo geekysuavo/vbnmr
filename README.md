@@ -29,9 +29,24 @@ FIXME.
 
 FIXME.
 
-### Installation
+## Installation
 
-FIXME.
+The **vbnmr** library is written in C99-compliant source code (with GNU
+extensions). The [FFTW](http://www.fftw.org) library is required for
+compilation.
+
+You can compile and install **vbnmr** as follows:
+
+```bash
+git clone git://github.com/geekysuavo/vbnmr.git
+cd vbnmr
+make
+sudo make install
+```
+
+Following installation, **vbnmr** can be used by inclusion as a shared
+library in C programs, or by importing it as a module into **vflang**
+scripts.
 
 ## Licensing
 
