@@ -54,7 +54,7 @@ dat = data();
 # ... fill the dataset with measurements ...
 mdl = tauvfr(
   tau: tau, nu: nu, data: dat,
-  factors: M * [decay(alpha: A, beta: B, fixed: true),
+  factors: M * [decay(alpha: A, beta: B, fixed: true) *
                 quad(mu: U, tau: T, ftsize: 65536)]
 );
 ```
