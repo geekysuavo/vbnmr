@@ -23,11 +23,66 @@ More details are in preparation for submission to:
 
 ## Introduction
 
-FIXME.
+In short, **vbnmr** extends [VFL](http://github.com/geekysuavo/vfl) to
+support parameteric models of the kind introduced by G. L. Bretthorst,
+R. Chylla, and J. L. Markley. Thus, we directly obtain an engine for
+parameter inference (_via_ fixed-form variational Bayes), in the
+NMR signal model.
 
 ### Modeling NMR data
 
-FIXME.
+In the simplest possible case, we may treat the NMR signal as a sum of
+[decaying](https://en.wikipedia.org/wiki/Exponential_decay)
+[multicomplex](http://en.wikipedia.org/wiki/Multicomplex_number)
+[quadrature](https://en.wikipedia.org/wiki/Quadrature_phase)
+[sinusoids](https://en.wikipedia.org/wiki/Sine_wave). In most
+cases, we have a good prior estimates of:
+
+ * Number of signals (specified as a count, _M_)
+ * Measurement noise (specified a precision, _tau_)
+ * Signal-to-noise ratio (specified as a power ratio, _nu_)
+
+In addition, we should have more-or-less decent prior estimates of:
+
+ * Mean and variance of decay rates (specified via _A_ and _B_)
+ * Mean and variance of signal frequencies (specified via _U_ and _T_)
+
+This state of knowledge may be represented in **vflang** as follows:
+
+```
+dat = data();
+# ... fill the dataset with measurements ...
+mdl = tauvfr(
+  tau: tau, nu: nu, data: dat,
+  factors: M * [decay(alpha: A, beta: B, fixed: true),
+                quad(mu: U, tau: T, ftsize: 65536)]
+);
+```
+
+The keen observer will notice that we have fixed the decay factor and
+specified the **ftsize** property of each quadrature factor. Doing so
+enables the use of fast mean-field inference when the data lie on an
+integer grid:
+
+```
+opt = mf(model: mdl, maxIters: 1);
+opt.execute();
+```
+
+If required, we can then perform full inference using natural gradient
+ascent over all the factor parameters:
+
+```
+for j in std.range(n: mdl.M) {
+  mdl.factors[j][0].fixed = false; # un-fix each decay factor.
+}
+opt = fg(model: mdl); # run natural gradient optimization.
+opt.execute();
+```
+
+The above **vflang** is a small taste of the possible methods of inference
+using the **vbnmr** extension to **vfl**. More complete documentation will
+be made available in the near future.
 
 ## Installation
 
