@@ -1,28 +1,22 @@
 
-% construct a list of seeds.
-seeds = randi([11111, 99999], 200, 1);
+% set the number of signals per experiment
+% (must match linear.c / linear.vfl)
+M = 5;
 
-% initialize the output file.
-fh = fopen('linear.dat', 'w');
-D = [];
+% open the input file.
+dats = load(argv(){1});
 
-% loop over the seeds.
-for n = 1 : length(seeds),
-  % build the command string.
-  cmd = ['env DYLD_LIBRARY_PATH=../../lib', ...
-            ' RNG_SEED=', num2str(seeds(n)), ...
-            ' ./linear | tail -n 5'];
+% loop over the experiments.
+for idx = 1 : M : length(dats)
+  % get the experiment data.
+  dat = dats(idx : idx + M - 1, :);
 
-  % run the command.
-  [status, output] = system(cmd);
-  dat = str2num(output);
-
-  % get the frequencies.
+  % get the initial parameters.
   f1 = dat(:,1);
-  f2 = dat(:,3);
-
-  % get the weights.
   w1 = dat(:,2);
+
+  % get the inferred parameters.
+  f2 = dat(:,3);
   w2 = dat(:,4);
 
   % get the extras.
@@ -35,22 +29,18 @@ for n = 1 : length(seeds),
     [i, j] = find(df == min(vec(df)));
 
     % output the matching values in the result.
-    fprintf(fh, '%16.9e %16.9e %16.9e %16.9e', ...
-            f1(i), f2(j), w1(i), w2(j));
+    printf('%16.9e %16.9e %16.9e %16.9e', ...
+           f1(i), w1(i), f2(j), w2(j));
 
     % output the extras.
     for tc = 1 : columns(T)
-      fprintf(fh, ' %16.9e', T(j,tc));
+      printf(' %16.9e', T(j,tc));
     end
-    fprintf(fh, '\n');
+    printf('\n');
 
     % avoid making repeat matches.
     f1(i) = nan;
     f2(j) = nan;
   end
-  fflush(fh);
 end
-
-% close the output file.
-fclose(fh);
 

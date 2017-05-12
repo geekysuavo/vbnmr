@@ -3,15 +3,13 @@
 import vbnmr;
 
 # define some constants.
+nexpt = 200;
 M = 5;
 tau = 1;
 tauf = 20;
 
 # create a random number generator.
 rand = rng();
-
-# sample a random phase shift.
-phi = pi * rand.uniform(lower: -1, upper: 1);
 
 # create a uniformly gridded dataset for sampling.
 dat = data();
@@ -30,75 +28,84 @@ mdl = vfgp(
                 quad(mu: 0, tau: tauf, ftsize: 65536)]
 );
 
-# set the initial factor frequencies.
-for j in std.range(n: mdl.M) {
-  # sample a random frequency.
-  freq = rand.normal(tau: tauf);
+# loop over the number of experiments.
+for expt in std.range(n: nexpt) {
+  # sample a random phase shift.
+  phi = pi * rand.uniform(lower: -1, upper: 1);
 
-  # set the factor frequency mean.
-  mdl.factors[j][1].mu = freq;
-  mdl.factors[j].update();
+  # set the initial factor frequencies.
+  for j in std.range(n: mdl.M) {
+    # sample a random frequency.
+    freq = rand.normal(tau: tauf);
 
-  # store the frequency in the table.
-  par[j][0] = freq;
-}
+    # set the factor frequency mean.
+    mdl.factors[j][1].mu = freq;
+    mdl.factors[j].update();
 
-# set the initial factor weights.
-winit = [0] * mdl.K;
-for k in std.range(begin: 0, step: 2, end: mdl.K - 1) {
-  # sample a random amplitude.
-  w = rand.uniform(lower: 1, upper: 100);
-  w0 = w * math.cos(v: phi);
-  w1 = w * math.sin(v: phi);
+    # store the frequency in the table.
+    par[j][0] = freq;
+  }
 
-  # set the weight values.
-  winit[k + 0] = w0;
-  winit[k + 1] = w1;
+  # set the initial factor weights.
+  winit = [0] * mdl.K;
+  for k in std.range(begin: 0, step: 2, end: mdl.K - 1) {
+    # sample a random amplitude.
+    w = rand.uniform(lower: 1, upper: 100);
+    w0 = w * math.cos(v: phi);
+    w1 = w * math.sin(v: phi);
 
-  # store the amplitude in the table.
-  par[k/2][1] = w;
-}
+    # set the weight values.
+    winit[k + 0] = w0;
+    winit[k + 1] = w1;
 
-# evaluate the model over the input dataset.
-mdl.wbar = winit;
-mdl.eval(data: dat);
+    # store the amplitude in the table.
+    par[k/2][1] = w;
+  }
 
-# add noise to the model evaluation.
-for i in std.range(n: dat.N) {
-  dat[i] = dat[i].y + rand.normal(tau: tau);
-}
+  # evaluate the model over the input dataset.
+  mdl.wbar = winit;
+  mdl.eval(data: dat);
 
-# reset the model.
-mdl.reset();
+  # add noise to the model evaluation.
+  for i in std.range(n: dat.N) {
+    dat[i] = dat[i].y + rand.normal(tau: tau);
+  }
 
-# optimize using a mean-field iteration.
-opt = mf(model: mdl, maxIters: 1);
-opt.execute();
+  # reset the model.
+  mdl.reset();
 
-# optimize further using natural gradients.
-opt = fg(model: mdl);
-opt.execute();
+  # optimize using a mean-field iteration.
+  opt = mf(model: mdl, maxIters: 1);
+  opt.execute();
 
-# extract the inferred parameters.
-wbar = mdl.wbar;
-Sigma = mdl.Sigma;
-for j in std.range(n: mdl.M) {
-  # get the frequency mean and standard deviation.
-  freq = mdl.factors[j][1].mu;
-  freqErr = 1 / math.sqrt(v: mdl.factors[j][1].tau);
+  # optimize further using natural gradients.
+  opt = fg(model: mdl);
+  opt.execute();
 
-  # get the weight mean and standard deviation.
-  w0 = wbar[2 * j];
-  w1 = wbar[2 * j + 1];
-  S0 = Sigma[2 * j][2 * j];
-  S1 = Sigma[2 * j + 1][2 * j + 1];
-  ampl = math.sqrt(v: w0^2 + w1^2);
-  amplErr = math.sqrt(v: S0^2 + S1^2);
+  # extract the inferred parameters.
+  wbar = mdl.wbar;
+  Sigma = mdl.Sigma;
+  for j in std.range(n: mdl.M) {
+    # get the frequency mean and standard deviation.
+    freq = mdl.factors[j][1].mu;
+    freqErr = 1 / math.sqrt(v: mdl.factors[j][1].tau);
 
-  # store the values in the table.
-  par[j][2] = freq;
-  par[j][3] = ampl;
-  par[j][4] = freqErr;
-  par[j][5] = amplErr;
+    # get the weight mean and standard deviation.
+    w0 = wbar[2 * j] ^ 2;
+    w1 = wbar[2 * j + 1] ^ 2;
+    S0 = Sigma[2 * j][2 * j];
+    S1 = Sigma[2 * j + 1][2 * j + 1];
+    ampl = math.sqrt(v: w0 + w1);
+    amplErr = math.sqrt(v: S0 + S1);
+
+    # store the values in the table.
+    par[j][2] = freq;
+    par[j][3] = ampl;
+    par[j][4] = freqErr;
+    par[j][5] = amplErr;
+
+    # output the initial and inferred parameters.
+    std.println(f: ' %16.9le' * 6, v: par[j]);
+  }
 }
 
