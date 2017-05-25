@@ -1,17 +1,17 @@
 
-# BIN: test executable filename.
+# test executable filename.
 BIN=toy1d
 
-# SRC: source filenames.
+# source filenames.
 SRC=toy1d.c
 
-# DAT: output data filenames.
+# output data filenames.
 DAT=  vfr-mean.dat vfr-var.dat vfr.p0.dat vfr.p1.dat
 DAT+= gp-mean.dat gp-var.dat gp.p0.dat gp.p1.dat
 
-# TESTFLAGS: environment variables to set during testing.
+# environment variables to set during testing.
 TESTFLAGS=RNG_SEED=7321
 
-# include the testing base makefile.
+# include the base testing makefile.
 include ../tests.mk
 

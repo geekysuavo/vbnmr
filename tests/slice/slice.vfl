@@ -23,7 +23,10 @@ for j in std.range(n: mdl.M) {
 # create a full-gradient optimizer.
 opt = fg(
   model: mdl,
-  lipschitzInit: 100
+  maxIters: 100,
+  lipschitzInit: 100,
+  logFile: 'slice.log',
+  logParms: true
 );
 
 # optimize.

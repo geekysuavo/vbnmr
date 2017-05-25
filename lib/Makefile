@@ -31,7 +31,7 @@ LIBDIR=$(PREFIX)/lib
 # global, default make target.
 all: $(LIB)
 
-# LIB: library linkage make target.
+# library linkage target.
 $(LIB): $(OBJ)
 	@echo " LD   $@"
 	@$(CC) $(LDFLAGS) $^ -o $@ $(LIBS)

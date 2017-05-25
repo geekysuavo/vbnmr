@@ -1,16 +1,13 @@
 
-# BIN: test executable filename.
+# test executable filename.
 BIN=linear
 
-# SRC: source filenames.
+# source filenames.
 SRC=linear.c
 
-# DAT: output data filenames.
-DAT=
-
-# TESTFLAGS: environment variables to set during testing.
+# environment variables to set during testing.
 TESTFLAGS=RNG_SEED=7321
 
-# include the testing base makefile.
+# include the base testing makefile.
 include ../tests.mk
 

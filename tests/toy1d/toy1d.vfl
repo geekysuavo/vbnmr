@@ -16,15 +16,16 @@ mdl = vfgp(
 
 # randomize the factor means.
 for j in std.range(n: mdl.M) {
-  mdl.factors[j][1].mu = rand.normal(sigma: 300);
+  mdl.factors[j][1].mu = rand.normal(tau: 1e-5);
   mdl.factors[j].update();
 }
 
 # create a full-gradient optimizer.
 opt = fg(
   model: mdl,
-  maxIters: 1000,
-  lipschitzInit: 0.01
+  lipschitzInit: 1e-3,
+  logFile: 'toy1d.log',
+  logParms: true
 );
 
 # optimize.
