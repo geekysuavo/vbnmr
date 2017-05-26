@@ -90,10 +90,10 @@ mean.augment(outputs: [0, 1], grid: S.grid);
 var.augment(outputs: [0, 1], grid: S.grid);
 
 # loop over the sampling iterations.
-for iter in std.range(start: 2, step: 2, end: 200) {
+while (dat.N <= 200) {
   # write the current dataset.
   fmeas = 'meas-%04ld.dat';
-  dat.write(file: fmeas.format(v: [iter]));
+  dat.write(file: fmeas.format(v: [dat.N]));
 
   # re-fit the model.
   fit.reset();
@@ -103,8 +103,8 @@ for iter in std.range(start: 2, step: 2, end: 200) {
   fmean = 'vfr-mean-%04ld.dat';
   fvar  = 'vfr-var-%04ld.dat';
   fit.predict(mean: mean, var: var);
-  mean.write(file: fmean.format(v: [iter]));
-  var.write(file: fvar.format(v: [iter]));
+  mean.write(file: fmean.format(v: [dat.N]));
+  var.write(file: fvar.format(v: [dat.N]));
 
   # search for the next sample.
   x = S.execute();
