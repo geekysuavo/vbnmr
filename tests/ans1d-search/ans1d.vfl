@@ -1,0 +1,118 @@
+
+# import the vbnmr module.
+import vbnmr;
+
+# define model fitting parameters.
+tau_noise = 1e3;
+nu = 1e-6;
+M = 10;
+
+# define the prior factor parameters.
+alpha = 50;
+beta  =  5e4;
+mu    =  0;
+tau   = 50;
+
+# define the ground truth frequencies.
+omega = [
+  -0.083,
+  -0.026,
+   0.038,
+   0.042,
+   0.074,
+   0.091
+];
+
+# define the ground truth weights.
+wbar = [
+  1,   0,
+  1,   0,
+  0.1, 0,
+  0.3, 0,
+  1,   0,
+  0.9, 0
+];
+
+# create a pseudorandom number generator.
+rand = rng(seed: 775);
+
+f0 = [decay(alpha: alpha, beta: beta, fixed: true) *
+      quad(mu: mu, tau: tau, ftsize: 65536)];
+
+# create a ground truth model.
+truth = tauvfr(
+  tau: tau_noise, nu: nu,
+  factors: omega.len * f0,
+  wbar: wbar
+);
+
+# initialize the factor frequencies.
+for j in std.range(n: omega.len) {
+  truth.factors[j][1].mu = omega[j];
+  truth.factors[j].update();
+}
+
+# initialize the dataset with a single (quadrature) sample.
+dat = data();
+for p in [0, 1] {
+  y = truth.eval(p: p, x: [0]) + rand.normal(tau: tau_noise);
+  dat.augment(datum: datum(p: p, x: [0], y: y));
+}
+
+# create a model for learning.
+fit = tauvfr(
+  tau: tau_noise, nu: nu, data: dat,
+  factors: M * f0
+);
+
+# create a mean-field optimizer.
+opt = mf(
+  model: fit,
+  maxIters: 1,
+  logFile: 'ans1d.log',
+  logParms: true
+);
+
+# create a search object.
+S = search(
+  model: fit,
+  data: dat,
+  outputs: 2,
+  grid: [[0, 1, 10e3]]
+);
+
+# allocate datasets for prediction.
+mean = data();
+var = data();
+
+# augment the prediction datasets with the search grid.
+mean.augment(outputs: [0, 1], grid: S.grid);
+var.augment(outputs: [0, 1], grid: S.grid);
+
+# loop over the sampling iterations.
+for iter in std.range(start: 2, step: 2, end: 200) {
+  # write the current dataset.
+  fmeas = 'meas-%04ld.dat';
+  dat.write(file: fmeas.format(v: [iter]));
+
+  # re-fit the model.
+  fit.reset();
+  opt.execute();
+
+  # compute and write the model prediction.
+  fmean = 'vfr-mean-%04ld.dat';
+  fvar  = 'vfr-var-%04ld.dat';
+  fit.predict(mean: mean, var: var);
+  mean.write(file: fmean.format(v: [iter]));
+  var.write(file: fvar.format(v: [iter]));
+
+  # search for the next sample.
+  x = S.execute();
+
+  # augment the dataset with the next sample.
+  for p in [0, 1] {
+    y = truth.eval(p: p, x: x) + rand.normal(tau: tau_noise);
+    dat.augment(datum: datum(p: p, x: x, y: y));
+  }
+}
+
