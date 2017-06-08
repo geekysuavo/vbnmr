@@ -1,0 +1,38 @@
+
+# import the vbnmr module.
+import vbnmr;
+
+# create a model.
+mdl = vfgp(
+  tau: 1.2,
+  nu: 1e-6,
+  data: data(file: 'proton.dat'),
+  factors: 35 * [decay(alpha: 10, beta: 5e3, fixed: true) *
+                 quad(mu: 0, tau: 0.1, ftsize: 1048576)]
+);
+
+# create a mean-field optimizer.
+opt = mf(
+  model: mdl,
+  maxIters: 1
+);
+
+# optimize.
+t = timer();
+opt.execute();
+t.report();
+
+# allocate datasets for prediction.
+mean = data();
+var = data();
+
+# augment the prediction datasets with grids.
+G = [[0, 0.1, 8192]];
+mean.augment(outputs: [0, 1], grid: G);
+var.augment(outputs: [0, 1], grid: G);
+
+# compute and write the vfr prediction.
+mdl.predict(mean: mean, var: var);
+mean.write(file: 'vfr-mean.dat');
+var.write(file: 'vfr-var.dat');
+
