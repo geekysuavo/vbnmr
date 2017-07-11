@@ -23,6 +23,8 @@ clean:
 	@$(MAKE) -sC tests/ans1d-vfgp clean
 	@$(MAKE) -sC tests/ans1d-search clean
 	@$(MAKE) -sC tests/linear clean
+	@$(MAKE) -sC tests/mf-glcnac-c13 clean
+	@$(MAKE) -sC tests/mf-glcnac-h1 clean
 	@$(MAKE) -sC tests/mf-slice clean
 	@$(MAKE) -sC tests/mf-toy1d clean
 	@$(MAKE) -sC tests/mf-toy2d clean
