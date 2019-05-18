@@ -23,7 +23,9 @@ opt = mf(
 );
 
 # optimize.
+t = timer();
 opt.execute();
+t.report();
 
 # allocate datasets for fit storage.
 fitMean = data(file: infile);
